@@ -8,12 +8,12 @@ def carregar_modelo():
     model = MPlus.from_pretrained(
         "YuWangX/mplus-8b", 
         attn_implementation="flash_attention_2", 
-        torch_dtype=torch.bfloat16,
-        device_map="auto"
+        torch_dtype=torch.bfloat16
     )
     tokenizer = AutoTokenizer.from_pretrained("YuWangX/mplus-8b")
     model = model.to(torch.bfloat16)
     model.put_ltm_to_numpy()
+    model = model.cuda()
     print("Modelo carregado com sucesso!\n")
     return model, tokenizer
 
@@ -60,7 +60,7 @@ def main():
             texto_memoria = read_memory()
             if len(texto_memoria.split()) < 10:
                 print("[Aviso] Textos muito curtos (menos de ~16 tokens) podem instabilizar a memória do modelo.")
-            
+
             input_ids = tokenizer(texto_memoria, return_tensors='pt', add_special_tokens=False).input_ids.cuda()
             # DEBUG: Test forward pass with output_delta_memory=True
             print("\n[DEBUG] Testing forward pass...")
