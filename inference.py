@@ -8,12 +8,12 @@ def carregar_modelo():
     model = MPlus.from_pretrained(
         "YuWangX/mplus-8b", 
         attn_implementation="flash_attention_2", 
-        torch_dtype=torch.bfloat16
+        torch_dtype=torch.bfloat16,
+        device_map="auto"
     )
     tokenizer = AutoTokenizer.from_pretrained("YuWangX/mplus-8b")
     model = model.to(torch.bfloat16)
     model.put_ltm_to_numpy()
-    model = model.cuda()
     print("Modelo carregado com sucesso!\n")
     return model, tokenizer
 

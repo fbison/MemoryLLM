@@ -2511,12 +2511,16 @@ class MPlus(LlamaForCausalLM):
                 delta_memory=None,
                 is_injection=False,
                 cat_to_maximum_memory=False):
-        
+
         if delta_memory is None or len(delta_memory) == 0:
             if is_injection:
                 cur_memory = self.memory[idx][ - self.num_tokens:].unsqueeze(0).repeat(len(hidden_states), 1, 1)
             else:
                 cur_memory = self.memory[idx].unsqueeze(0).repeat(len(hidden_states), 1, 1)
+
+            # Ensure memory is on the same device as hidden_states
+            if cur_memory.device != hidden_states.device:
+                cur_memory = cur_memory.to(hidden_states.device)
         else:
             cur_memory = delta_memory[:, idx]
             if (not is_injection) and cat_to_maximum_memory:
@@ -2535,7 +2539,7 @@ class MPlus(LlamaForCausalLM):
                     old_memory,
                     cur_memory,
                 ], dim=1)
-            
+
         return cur_memory
 
     def get_ltm(self, idx, hidden_states, random_retriever_length=False):
