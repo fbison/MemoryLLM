@@ -62,21 +62,6 @@ def main():
                 print("[Aviso] Textos muito curtos (menos de ~16 tokens) podem instabilizar a memória do modelo.")
             
             input_ids = tokenizer(texto_memoria, return_tensors='pt', add_special_tokens=False).input_ids.cuda()
-            # DEBUG: Test forward pass with output_delta_memory=True
-            print("\n[DEBUG] Testing forward pass...")
-            with torch.no_grad():
-                debug_output = model(
-                    input_ids=input_ids,
-                    is_injection=True,
-                    output_delta_memory=True,
-                    return_dict=True
-                )
-                print(f"[DEBUG] output_delta_memory returned: {debug_output.delta_memory}")
-                if debug_output.delta_memory is not None:
-                    print(f"[DEBUG] delta_memory shape: {debug_output.delta_memory.shape}")
-                else:
-                    print("[DEBUG] *** delta_memory is None! ***")
-                    print(f"[DEBUG] Model has {len(model.model.layers)} decoder layers")
 
             model.inject_memory(input_ids, update_memory=True)
             memorias_armazenadas.append(texto_memoria)

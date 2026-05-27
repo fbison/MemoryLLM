@@ -2231,12 +2231,6 @@ class MPlus(LlamaForCausalLM):
         encoder_query_indices: Optional[List[int]] = None,
         training: Optional[bool] = False,
     ) -> Union[Tuple, MemoryLMOutputWithPastAndCrossAttentions]:
-        # ADD THIS DEBUG CODE
-        if output_delta_memory:
-            print(f"[FORWARD DEBUG] output_delta_memory=True, starting forward pass")
-        else:
-            print(f"[FORWARD DEBUG] output_delta_memory=False")
-        # END DEBUG
         output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
         output_hidden_states = (
             output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
@@ -2305,10 +2299,6 @@ class MPlus(LlamaForCausalLM):
         all_self_attns = () if output_attentions else None
         next_decoder_cache = () if use_cache else None
         all_delta_memory = [] if output_delta_memory else None
-        # ADD THIS DEBUG CODE
-        print(f"[FORWARD DEBUG] Before loop: all_delta_memory initialized as {type(all_delta_memory)}, is_injection={is_injection}")
-        print(f"[FORWARD DEBUG] Number of decoder layers: {len(self.model.layers)}")
-        # END DEBUG
         all_retriever_weights = () if output_retriever_weights else None
         all_encoder_retriever_weights = () if (output_retriever_weights and encoder_query_indices is not None) else None
         all_ltm_indices = ()
@@ -2394,7 +2384,6 @@ class MPlus(LlamaForCausalLM):
             hidden_states = layer_outputs[0]
             if output_delta_memory:
                 all_delta_memory.append(hidden_states[:, -self.num_tokens:])
-                print(f"[FORWARD DEBUG] Layer {idx}: appended to all_delta_memory, length now: {len(all_delta_memory)}")
 
             hidden_states = hidden_states[:, -input_ids.shape[1]:]
 
@@ -2425,43 +2414,14 @@ class MPlus(LlamaForCausalLM):
             next_cache = next_cache.to_legacy_cache()
 
         if output_delta_memory:
-            print(f"[FORWARD DEBUG] Stacking: all_delta_memory length = {len(all_delta_memory)}")
-            
-            # Check devices of all elements
-            devices_list = [x.device for x in all_delta_memory]
-            unique_devices = set(devices_list)
-            print(f"[FORWARD DEBUG] Devices: {unique_devices}")
-            print(f"[FORWARD DEBUG] First device: {devices_list[0]}, Last device: {devices_list[-1]}")
-            
             if all_delta_memory[0].device != all_delta_memory[-1].device:
-                print(f"[FORWARD DEBUG] Device mismatch detected! Moving all to {all_delta_memory[0].device}")
                 assert not self.training
                 device = all_delta_memory[0].device
-                try:
-                    all_delta_memory = [x.to(device) for x in all_delta_memory]
-                    print(f"[FORWARD DEBUG] Successfully moved all tensors to {device}")
-                except Exception as e:
-                    print(f"[FORWARD DEBUG] ERROR moving tensors: {e}")
-                    raise
-                
-                try:
-                    delta_memory = torch.stack(all_delta_memory, dim=0).transpose(0, 1)
-                    print(f"[FORWARD DEBUG] Successfully stacked tensors, shape: {delta_memory.shape}")
-                except Exception as e:
-                    print(f"[FORWARD DEBUG] ERROR stacking tensors: {e}")
-                    raise
+                all_delta_memory = [x.to(device) for x in all_delta_memory]
+                delta_memory = torch.stack(all_delta_memory, dim=0).transpose(0, 1)
 
             else:
-                print(f"[FORWARD DEBUG] All tensors on same device, stacking...")
-                try:
-                    delta_memory = torch.stack(all_delta_memory, dim=0).transpose(0, 1)
-                    print(f"[FORWARD DEBUG] Successfully stacked tensors, shape: {delta_memory.shape}")
-                except Exception as e:
-                    print(f"[FORWARD DEBUG] ERROR stacking tensors: {e}")
-                    raise
-        else:
-            delta_memory = None
-            print(f"[FORWARD DEBUG] output_delta_memory=False, delta_memory = None")
+                delta_memory = torch.stack(all_delta_memory, dim=0).transpose(0, 1)
 
         if self.config.pretraining_tp > 1:
             lm_head_slices = self.lm_head.weight.split(self.vocab_size // self.config.pretraining_tp, dim=0)
@@ -2487,19 +2447,6 @@ class MPlus(LlamaForCausalLM):
         if not return_dict:
             return tuple(v for v in [loss, logits, hidden_states, next_cache, all_hidden_states, all_self_attns] if v is not None)
         
-        # DEBUG: Check delta_memory before return
-        if 'delta_memory' not in locals():
-            print(f"[FORWARD DEBUG] *** delta_memory is not defined in locals()! ***")
-        else:
-            print(f"[FORWARD DEBUG] delta_memory exists in locals(): {type(delta_memory)}")
-        if output_delta_memory:
-            print(f"[FORWARD DEBUG] Before return: delta_memory type = {type(delta_memory)}")
-            if delta_memory is not None:
-                print(f"[FORWARD DEBUG] Before return: delta_memory shape = {delta_memory.shape}")
-            else:
-                print(f"[FORWARD DEBUG] *** delta_memory is None at return time! ***")
-        else:
-            print(f"[FORWARD DEBUG] output_delta_memory=False, delta_memory will be returned as None")
         return MemoryLMOutputWithPastAndCrossAttentions(
             loss=loss,
             logits=logits,
