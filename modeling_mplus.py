@@ -2444,22 +2444,43 @@ class MPlus(LlamaForCausalLM):
             next_cache = next_cache.to_legacy_cache()
 
         if output_delta_memory:
-            # ADD THIS DEBUG CODE
-            print(f"[FORWARD DEBUG] Before stacking: all_delta_memory length = {len(all_delta_memory)}")
-            if len(all_delta_memory) > 0:
-                print(f"[FORWARD DEBUG] First element device: {all_delta_memory[0].device}")
-                print(f"[FORWARD DEBUG] First element shape: {all_delta_memory[0].shape}")
-            else:
-                print(f"[FORWARD DEBUG] *** all_delta_memory is EMPTY! ***")
-            # END DEBUG
+            print(f"[FORWARD DEBUG] Stacking: all_delta_memory length = {len(all_delta_memory)}")
+            
+            # Check devices of all elements
+            devices_list = [x.device for x in all_delta_memory]
+            unique_devices = set(devices_list)
+            print(f"[FORWARD DEBUG] Devices: {unique_devices}")
+            print(f"[FORWARD DEBUG] First device: {devices_list[0]}, Last device: {devices_list[-1]}")
+            
             if all_delta_memory[0].device != all_delta_memory[-1].device:
+                print(f"[FORWARD DEBUG] Device mismatch detected! Moving all to {all_delta_memory[0].device}")
                 assert not self.training
                 device = all_delta_memory[0].device
-                all_delta_memory = [x.to(device) for x in all_delta_memory]
-                delta_memory = torch.stack(all_delta_memory, dim=0).transpose(0, 1)
+                try:
+                    all_delta_memory = [x.to(device) for x in all_delta_memory]
+                    print(f"[FORWARD DEBUG] Successfully moved all tensors to {device}")
+                except Exception as e:
+                    print(f"[FORWARD DEBUG] ERROR moving tensors: {e}")
+                    raise
+                
+                try:
+                    delta_memory = torch.stack(all_delta_memory, dim=0).transpose(0, 1)
+                    print(f"[FORWARD DEBUG] Successfully stacked tensors, shape: {delta_memory.shape}")
+                except Exception as e:
+                    print(f"[FORWARD DEBUG] ERROR stacking tensors: {e}")
+                    raise
 
             else:
-                delta_memory = torch.stack(all_delta_memory, dim=0).transpose(0, 1)
+                print(f"[FORWARD DEBUG] All tensors on same device, stacking...")
+                try:
+                    delta_memory = torch.stack(all_delta_memory, dim=0).transpose(0, 1)
+                    print(f"[FORWARD DEBUG] Successfully stacked tensors, shape: {delta_memory.shape}")
+                except Exception as e:
+                    print(f"[FORWARD DEBUG] ERROR stacking tensors: {e}")
+                    raise
+        else:
+            delta_memory = None
+            print(f"[FORWARD DEBUG] output_delta_memory=False, delta_memory = None")
 
         if self.config.pretraining_tp > 1:
             lm_head_slices = self.lm_head.weight.split(self.vocab_size // self.config.pretraining_tp, dim=0)
