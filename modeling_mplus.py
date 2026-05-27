@@ -2506,6 +2506,19 @@ class MPlus(LlamaForCausalLM):
         if not return_dict:
             return tuple(v for v in [loss, logits, hidden_states, next_cache, all_hidden_states, all_self_attns] if v is not None)
         
+        # DEBUG: Check delta_memory before return
+        if 'delta_memory' not in locals():
+            print(f"[FORWARD DEBUG] *** delta_memory is not defined in locals()! ***")
+        else:
+            print(f"[FORWARD DEBUG] delta_memory exists in locals(): {type(delta_memory)}")
+        if output_delta_memory:
+            print(f"[FORWARD DEBUG] Before return: delta_memory type = {type(delta_memory)}")
+            if delta_memory is not None:
+                print(f"[FORWARD DEBUG] Before return: delta_memory shape = {delta_memory.shape}")
+            else:
+                print(f"[FORWARD DEBUG] *** delta_memory is None at return time! ***")
+        else:
+            print(f"[FORWARD DEBUG] output_delta_memory=False, delta_memory will be returned as None")
         return MemoryLMOutputWithPastAndCrossAttentions(
             loss=loss,
             logits=logits,
