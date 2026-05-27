@@ -17,6 +17,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from dataclasses import dataclass
+from dataclasses import dataclass
 import math
 from typing import List, Optional, Tuple, Union
 
@@ -55,34 +57,13 @@ logger = logging.get_logger(__name__)
 
 _CONFIG_FOR_DOC = "LlamaConfig"
 
+@dataclass
 class MemoryLMOutputWithPastAndCrossAttentions(CausalLMOutputWithCrossAttentions):
-    def __init__(
-        self,
-        loss=None,
-        logits=None,
-        past_key_values=None,
-        hidden_states=None,
-        attentions=None,
-        cross_attentions=None,
-        delta_memory=None,
-        last_hidden_state=None,
-        retriever_weights=None,
-        encoder_retriever_weights=None,
-        ltm_indices=None,
-    ):
-        super().__init__(
-            loss=loss,
-            logits=logits,
-            past_key_values=past_key_values,
-            hidden_states=hidden_states,
-            attentions=attentions,
-            cross_attentions=cross_attentions,
-        )
-        self.delta_memory = delta_memory
-        self.last_hidden_state = last_hidden_state
-        self.retriever_weights = retriever_weights
-        self.encoder_retriever_weights = encoder_retriever_weights
-        self.ltm_indices = ltm_indices
+    delta_memory: Optional[torch.FloatTensor] = None
+    last_hidden_state: Optional[torch.FloatTensor] = None
+    retriever_weights: Optional[torch.FloatTensor] = None
+    encoder_retriever_weights: Optional[torch.FloatTensor] = None
+    ltm_indices: Optional[Tuple[torch.LongTensor]] = None
 
 def _prepare_4d_causal_attention_mask_with_cache_position(
     attention_mask: torch.Tensor,
