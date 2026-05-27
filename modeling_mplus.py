@@ -2138,25 +2138,16 @@ class MPlus(LlamaForCausalLM):
         return cached_contexts_indicators
         
     def cat_memory_and_hiddens(self, idx, hidden_states, delta_memory=None, 
-                                is_injection=False,
-                                cat_to_maximum_memory=False,
-                                random_retriever_length=False):
+                               is_injection=False,
+                               cat_to_maximum_memory=False,
+                               random_retriever_length=False):
         
         stm = self.get_stm(idx, hidden_states, delta_memory, is_injection, cat_to_maximum_memory)
-        
-        # Ensure stm is on the same device as hidden_states
-        if stm.device != hidden_states.device:
-            stm = stm.to(hidden_states.device)
 
         ltm_indices = None
 
         if (not is_injection) and (delta_memory is None or cat_to_maximum_memory):
             ltm, ltm_indices = self.get_ltm(idx, hidden_states, random_retriever_length=random_retriever_length)
-            
-            # Ensure ltm is on the same device as hidden_states
-            if ltm.device != hidden_states.device:
-                ltm = ltm.to(hidden_states.device)
-            
             hidden_states = torch.cat([
                 ltm.unsqueeze(0),
                 stm,
@@ -2167,13 +2158,7 @@ class MPlus(LlamaForCausalLM):
             hidden_states = torch.cat([stm, hidden_states], dim=1)
 
         if self.add_bos_embedding:
-            bos_emb = self.bos_embedding[idx].unsqueeze(0).repeat(len(hidden_states), 1, 1)
-            
-            # Ensure bos_embedding is on the same device as hidden_states
-            if bos_emb.device != hidden_states.device:
-                bos_emb = bos_emb.to(hidden_states.device)
-            
-            hidden_states = torch.cat([bos_emb, hidden_states], dim=1)
+            hidden_states = torch.cat([self.bos_embedding[idx].unsqueeze(0).repeat(len(hidden_states), 1, 1), hidden_states], dim=1)
         
         return hidden_states, ltm_indices
     
@@ -2336,12 +2321,8 @@ class MPlus(LlamaForCausalLM):
             if output_hidden_states:
                 all_hidden_states += (hidden_states,)
             
-            # Ensure hidden_states is on the same device as the current layer
-            layer_device = next(decoder_layer.parameters()).device
-            if hidden_states.device != layer_device:
-                hidden_states = hidden_states.to(layer_device)
-            
             if past_key_values is None or past_key_values.get_seq_length(layer_idx=idx) == 0:
+
 
                 hidden_states, ltm_indices = self.cat_memory_and_hiddens(idx,
                                                 hidden_states=hidden_states,
@@ -2530,16 +2511,12 @@ class MPlus(LlamaForCausalLM):
                 delta_memory=None,
                 is_injection=False,
                 cat_to_maximum_memory=False):
-
+        
         if delta_memory is None or len(delta_memory) == 0:
             if is_injection:
                 cur_memory = self.memory[idx][ - self.num_tokens:].unsqueeze(0).repeat(len(hidden_states), 1, 1)
             else:
                 cur_memory = self.memory[idx].unsqueeze(0).repeat(len(hidden_states), 1, 1)
-
-            # Ensure memory is on the same device as hidden_states
-            if cur_memory.device != hidden_states.device:
-                cur_memory = cur_memory.to(hidden_states.device)
         else:
             cur_memory = delta_memory[:, idx]
             if (not is_injection) and cat_to_maximum_memory:
@@ -2558,7 +2535,7 @@ class MPlus(LlamaForCausalLM):
                     old_memory,
                     cur_memory,
                 ], dim=1)
-
+            
         return cur_memory
 
     def get_ltm(self, idx, hidden_states, random_retriever_length=False):
