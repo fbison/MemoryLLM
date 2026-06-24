@@ -15,3 +15,5 @@ peft==0.10.0
 numpy
 tensorboard
 accelerate==0.29.3
+datasets
+scikit-learn

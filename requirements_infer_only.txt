@@ -14,3 +14,5 @@ numpy==1.26.4
 accelerate==1.2.0
 peft==0.10.0
 flash-attn==2.5.4
+datasets
+scikit-learn
