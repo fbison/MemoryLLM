@@ -87,6 +87,19 @@ def verify_file_integrity(filepath):
        print(f"    [Integrity check failed: {str(e)[:50]}]")
        return 'corrupted'
 
+
+def delete_file_if_exists(filepath):
+   """Delete a file if it exists, return True if deleted"""
+   path = Path(filepath)
+   if path.exists():
+       try:
+           path.unlink()  # Delete the file
+           return True
+       except Exception as e:
+           print(f"    ⚠ Failed to delete {filepath}: {e}")
+           return False
+   return False
+
 def download_naturalqa():
    """Download Natural Questions validation dataset"""
    print("\n" + "="*60)
@@ -153,7 +166,10 @@ def download_naturalqa():
 
    # Download validation if needed
    if val_needs_download:
-       print(f"\n→ Downloading Natural Questions validation split...")
+       if val_status in ['empty', 'corrupted']:
+           print(f"\n→ Deleting corrupted validation file...")
+           delete_file_if_exists(val_file)
+       print(f"→ Downloading Natural Questions validation split...")
        ds = load_dataset('natural_questions', split='validation')
        print(f"  Writing {len(ds)} samples to {val_file}...")
        with open(val_file, 'w') as f:
@@ -165,7 +181,10 @@ def download_naturalqa():
 
    # Download training if needed and enabled
    if DOWNLOAD_TRAIN_SETS and train_needs_download:
-       print(f"\n→ Downloading Natural Questions training split...")
+       if train_status in ['empty', 'corrupted']:
+           print(f"\n→ Deleting corrupted training file...")
+           delete_file_if_exists(train_file)
+       print(f"→ Downloading Natural Questions training split...")
        print("  (This is used for --nuc > 0 unrelated contexts)")
        ds = load_dataset('natural_questions', split='train')
        print(f"  Writing {len(ds)} samples to {train_file}...")
@@ -254,7 +273,10 @@ def download_squad():
 
    # Download validation if needed
    if val_needs_download:
-       print(f"\n→ Downloading SQuAD validation split...")
+       if val_status in ['empty', 'corrupted']:
+           print(f"\n→ Deleting corrupted validation file...")
+           delete_file_if_exists(val_file)
+       print(f"→ Downloading SQuAD validation split...")
        ds = load_dataset('squad', split='validation')
        print(f"  Writing {len(ds)} samples to {val_file}...")
 
@@ -288,7 +310,10 @@ def download_squad():
 
    # Download training if needed and enabled
    if DOWNLOAD_TRAIN_SETS and train_needs_download:
-       print(f"\n→ Downloading SQuAD training split...")
+       if train_status in ['empty', 'corrupted']:
+           print(f"\n→ Deleting corrupted training file...")
+           delete_file_if_exists(train_file)
+       print(f"→ Downloading SQuAD training split...")
        print("  (This is used for --nuc > 0 unrelated contexts)")
        ds = load_dataset('squad', split='train')
        print(f"  Writing {len(ds)} samples to {train_file}...")
