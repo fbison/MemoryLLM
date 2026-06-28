@@ -10,9 +10,9 @@ import sys
 from pathlib import Path
 
 def download_naturalqa():
-   """Download Natural Questions dataset"""
+   """Download Natural Questions validation dataset"""
    print("\n" + "="*60)
-   print("Downloading Natural Questions dataset...")
+   print("Downloading Natural Questions validation dataset...")
    print("="*60)
 
    try:
@@ -27,36 +27,32 @@ def download_naturalqa():
    nq_dir.mkdir(parents=True, exist_ok=True)
    print(f"✓ Created directory: {nq_dir}")
 
-   # Download NQ dataset
-   print("Loading Natural Questions dataset from HuggingFace...")
-   ds = load_dataset('natural_questions')
+   # Download NQ validation split
+   print("Loading Natural Questions validation split from HuggingFace...")
+   ds = load_dataset('natural_questions', split='validation')
 
    # Save validation split as JSONL (following the repo's expected format)
    output_file = nq_dir / "v1.0-simplified_nq-dev-all.jsonl"
-   print(f"Writing {len(ds['validation'])} samples to {output_file}...")
+   print(f"Writing {len(ds)} samples to {output_file}...")
 
    with open(output_file, 'w') as f:
-       for example in ds['validation']:
+       for example in ds:
            f.write(json.dumps(example) + '\n')
 
    print(f"✓ Saved: {output_file}")
 
-   # Also save train split for unrelated contexts
-   train_file = nq_dir / "v1.0-simplified_simplified-nq-train.jsonl"
-   print(f"Writing {len(ds['train'])} training samples to {train_file}...")
+   print("\nℹ️  NOTE: Training set not downloaded. If you need to use --nuc > 0 (unrelated contexts),")
+   print("   you'll need to manually download the training split from:")
+   print("   https://huggingface.co/datasets/YuWangX/KnowledgeRetention")
+   print("   And place it as: data/nq/v1.0-simplified_simplified-nq-train.jsonl")
 
-   with open(train_file, 'w') as f:
-       for example in ds['train']:
-           f.write(json.dumps(example) + '\n')
-
-   print(f"✓ Saved: {train_file}")
    return True
 
 
 def download_squad():
-   """Download SQuAD dataset"""
+   """Download SQuAD validation dataset"""
    print("\n" + "="*60)
-   print("Downloading SQuAD dataset...")
+   print("Downloading SQuAD validation dataset...")
    print("="*60)
 
    try:
@@ -71,13 +67,13 @@ def download_squad():
    squad_dir.mkdir(parents=True, exist_ok=True)
    print(f"✓ Created directory: {squad_dir}")
 
-   # Download SQuAD dataset
-   print("Loading SQuAD dataset from HuggingFace...")
-   ds = load_dataset('squad')
+   # Download SQuAD validation split
+   print("Loading SQuAD validation split from HuggingFace...")
+   ds = load_dataset('squad', split='validation')
 
    # Convert to SQuAD format (JSON)
    output_file = squad_dir / "dev-v2.0.json"
-   print(f"Writing {len(ds['validation'])} samples to {output_file}...")
+   print(f"Writing {len(ds)} samples to {output_file}...")
 
    # Convert dataset to SQuAD format
    squad_format = {
@@ -85,7 +81,7 @@ def download_squad():
        "data": []
    }
 
-   for example in ds['validation']:
+   for example in ds:
        article = {
            "title": example.get('title', 'unknown'),
            "paragraphs": [{
@@ -105,6 +101,12 @@ def download_squad():
        json.dump(squad_format, f, indent=2)
 
    print(f"✓ Saved: {output_file}")
+
+   print("\nℹ️  NOTE: Training set not downloaded. If you need to use --nuc > 0 (unrelated contexts),")
+   print("   you'll need to manually download the training split from:")
+   print("   https://huggingface.co/datasets/YuWangX/KnowledgeRetention")
+   print("   And place it as: data/squad/train-v2.0.json")
+
    return True
 
 
