@@ -395,9 +395,9 @@ if __name__ == "__main__":
                 print(f"Running {dataset} dataset with nuc {opt.nuc}")
                 # filename = f"./results/results_{dataset}_{os.path.basename(opt.model)}_nuc_{opt.nuc}{'_backup' if opt.backup_memory else ''}.json"
                 if not os.path.exists(f"results/{dataset}"):
-                    os.mkdir(f"results/{dataset}")
+                    os.makedirs(f"results/{dataset}", exist_ok=True)
                 if not os.path.exists(f"results/{dataset}/{os.path.basename(opt.model)}"):
-                    os.mkdir(f"results/{dataset}/{os.path.basename(opt.model)}")
+                    os.makedirs(f"results/{dataset}/{os.path.basename(opt.model)}", exist_ok=True)
                 filename = f"results/{dataset}/{os.path.basename(opt.model)}/results_nuc_{opt.nuc}{'_backup' if opt.backup_memory else ''}_{opt.related_position}.json"
                 # filename = f"results/results_{dataset}_{os.path.basename(opt.model)}_nuc_{opt.nuc}{'_backup' if opt.backup_memory else ''}_{opt.related_position}.json"
 
@@ -469,9 +469,9 @@ if __name__ == "__main__":
             print(f"Running {dataset} dataset with nuc {opt.nuc}")
             
             if not os.path.exists(f"results/{dataset}"):
-                os.mkdir(f"results/{dataset}")
+                os.makedirs(f"results/{dataset}", exist_ok=True)
             if not os.path.exists(f"results/{dataset}/{os.path.basename(opt.model)}"):
-                os.mkdir(f"results/{dataset}/{os.path.basename(opt.model)}")
+                os.makedirs(f"results/{dataset}/{os.path.basename(opt.model)}", exist_ok=True)
             filename = f"results/{dataset}/{os.path.basename(opt.model)}/results_nuc_{opt.nuc}{'_backup' if opt.backup_memory else ''}_{opt.related_position}.json"
 
             # filename = f"results/results_{dataset}_{os.path.basename(opt.model)}_nuc_{opt.nuc}{'_backup' if opt.backup_memory else ''}_{opt.related_position}.json"
