@@ -1,0 +1,238 @@
+\vspace{-10pt}
+\section{Experiments}
+\vspace{-5pt}
+
+\subsection{Long Book QA and Event QA}
+\label{sub:long_book_and_event_qa}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=\linewidth]{figures/longbook_qa_results.pdf}
+    \vspace{-20pt}
+    \caption{Overall Performance Comparison Longbook Question Answering. Best viewed in colors.}
+    \label{fig:longbook-qa}
+    \vspace{-10pt}
+\end{figure}
+
+
+\vspace{-5pt}
+\subsubsection{Experimental Settings}
+\vspace{-5pt}
+We evaluate our model on two datasets designed to test long-context understanding and long-term memory capabilities:
+
+\textbf{LongBook-QA}: This dataset is part of $\infty$-Bench~\citep{infinitebench} and consists of 351 tuples in the format \texttt{(book, question, answer)}. Each book has an average input length of 192k tokens. The task requires answering questions based on the entire book, and we use the QA-F1 score as the evaluation metric.
+
+\textbf{LongBook Event QA}: We propose this new benchmark to evaluate the model’s ability to recall past events and reason chronologically. This dataset is constructed as follows:
+(1) We use the Named Entity Recognition (NER) tool from \texttt{SpaCy} to identify the ten most frequently mentioned characters in each of the first five books from the LongBook-QA dataset.
+(2) Each book is divided into 4096-token chunks in chronological order, and events experienced by the main characters are extracted using \texttt{gpt-4o}. This results in event lists with 1,016, 221, 644, 348, and 409 events for the five books, respectively.
+(3) For each event, we construct a multi-choice question-answering task by prompting \texttt{gpt-4o} to generate five fake events as distractors. The model is provided with the book text, five past events, and asked to identify the ground-truth event from six options. We use accuracy as the evaluation metric. 
+
+We compare \ours against the following baselines: (1) \textbf{Llama-3.1-8B-16k}: The original model with context window fixed as 16k. (2) \textbf{Llama-3.1-8B-SnapKV}, We processes a 32k token input and dynamically selects 16k key-value caches from the saved 32k caches with the techniques introduced from SnapKV~\citep{snapkv}. SnapKV incurs significant memory overhead, as illustrated in Section \ref{sub:gpu_memory_comparison}. (3) \textbf{Llama-3.1-3B-128k}: A 3B parameter version of the Llama3 series. This model uses a 128k context window and consumes comparable GPU memory to \ours because of its smaller size.
+
+(1) \textbf{Llama-3.1-3B-128k}: A 3B parameter version of the Llama3 series. This model uses a 128k context window and consumes comparable GPU memory to \ours because of its smaller size. (2) \textbf{Llama-3.1-8B-16k}: The original model with context window fixed as 16k. (3) \textbf{Llama-3.1-8B-BM25}:
+We use BM25 as the retriever. Specifically, we process the entire book by dividing it into chunks of 4,096 tokens and retrieve four relevant chunks for each question. The model Llama-3.1-8B is required to answer the question with four retrieved chunks. (4) \textbf{Llama-3.1-8B-SnapKV}, We processes a 32k token input and dynamically selects 16k key-value caches from the saved 32k caches with the techniques introduced from SnapKV~\citep{snapkv}. SnapKV incurs significant memory overhead, as illustrated in Section \ref{sub:gpu_memory_comparison}. 
+
+We present the primary results in the main paper, while deferring extended discussions and supplementary experiments to the appendix. These include: similarities to attention-based retrieval methods (Appendix \ref{sub:attention_based_retrieval_methods}); the structure of long-term memory (Appendix \ref{sub:form_of_long_term_memory}); latency and memory consumption when scaling (Appendix \ref{sec:latency_and_memory_consumption_while_scaling}); FLOPs comparison (Appendix \ref{sub:flops_comparison}); and the interpretability of memory vectors (Appendix \ref{sub:interpretability_of_memory_vectors}).
+
+
+\subsubsection{Experimental Results}
+The results for both benchmarks are shown in Figure \ref{fig:longbook-qa}. From the results, we observe the following: (1) \ours consistently outperforms all baselines, demonstrating its efficiency and effectiveness. In LongBook-QA, \ours achieves superior QA-F1 scores even while processing the least number of tokens (12,800 tokens in memory and 2,048 tokens in the generation context window). Similarly, in LongBook Event QA, \ours excels at identifying ground-truth events, showcasing its ability to reason over long-term dependencies. (2) Compared to Llama-3.1-3B-128k, the results on dataset Longbook-Event-QA suggest that tasks requiring reasoning capabilities benefit more from larger models with tailored structures for extended context windows rather than smaller models with longer context capacities. This highlights the importance of balancing model size and memory mechanisms under fixed GPU memory budgets. (3) Llama-3.1-8B-SnapKV underperforms Llama-3.1-8B-16k on LongBook-QA, indicating that solely relying on attention scores to select key tokens may not consistently yield optimal results. In contrast, \ours leverages a jointly trained retriever to identify and extract memory tokens, resulting in more effective performance on both datasets. (4) \ours outperforms Llama-3.1-8B with BM25 retriever, and Llama-3.1-8B with BM25 does not consistently outperform the original model Llama-3.1-8B-16k, particularly in tasks like Longbook-Event-QA which requires a more global understanding of the entire narrative. This highlights the limitations of chunk-level retrieval in scenarios that demand long-range comprehension. (5)
+Memory Efficiency: While \ours achieves state-of-the-art results, it does so with a highly memory-efficient design. Detailed memory cost comparisons are provided in Section \ref{sub:gpu_memory_comparison}. 
+
+
+\subsection{GPU Cost Comparison}
+\label{sub:gpu_memory_comparison}
+In this section, we report the maximum GPU memory allocated 
+during the inference across both datasets
+for each method mentioned in Section \ref{sub:long_book_and_event_qa}. The results are shown in Table \ref{tab:gpu-memory-cost}. From the results, we can find that \ours has the lowest GPU memory cost except for Llama-3.1-8B-16k.
+The reason that \ours uses fewer tokens but costs more GPU is that we have 12,800 tokens in each layer, while Llama-3.1-8B-16k has only one layer of 16k tokens. Therefore, we propose to offload the memory tokens on CPU, and reload them into GPU when the calculation reaches a certain layer. 
+By ``CPU offloading'', we specifically mean offloading the memory vectors present in each layer of the model. It is important to note that other models, such as Llama-3.1-8B do not have memory vectors, so our CPU offloading can only be applied to MemoryLLM and M+.
+With that, we can sacrifice some I/O time cost but substantially decrease the GPU cost without affecting the performance. This leads to ``\ours (offload)'' which achieves the least GPU memory consumption. We also include the GPU cost of MemoryLLM-8B, which is the model obtained after Stage 1 described in Section \ref{ssub:data_curriculum}. This shows that the Long-Term Memory does not incur more GPU costs.
+
+
+\begin{table}[]
+    \centering
+    \caption{GPU Memory Cost Comparison. MemoryLLM-8B is the model obtained after Stage 1 training, serving as an ablation study.}
+    \label{tab:gpu-memory-cost}
+    \begin{tabular}{lc}
+    \toprule
+       Method  & GPU Memory Cost (MB) \\
+    \midrule
+       Llama-3.1-8B-SnapKV  &  32574.49  \\
+       Llama-3.2-3B-128k &   30422.70 \\
+       \ours & 21177.76 \\
+       Llama-3.1-8B-16k &  19239.21\\
+       \ours (offload) & \textbf{17973.34} \\
+       \midrule
+       MemoryLLM-8B & 21176.24 \\
+       MemoryLLM-8B (offload) & 17967.47 \\
+    \bottomrule
+    \end{tabular}
+    \vspace{-10pt}
+\end{table}
+
+\begin{table*}[ht]
+    \centering
+    \caption{Experimental Results on LongBench.}
+    \label{tab:longbench}
+    \resizebox{0.94\linewidth}{!}{
+    \begin{tabular}{ccccccccccc}
+    \toprule
+    & \textbf{2wikimqa} & \textbf{hotpotqa} & \textbf{qasper} & \textbf{musique} & \textbf{multifieldqa\_en} & \textbf{narrativeqa} & Avg \\
+    \midrule
+     MemoryLLM-7B (20k) & 27.22 & 34.03 & 19.57 & 13.47 & 29.56 & 20.64 & 24.08\\
+     \midrule
+     Llama3.1-8B (8k) & 34.87 & 43.10 & 29.96 & 24.96 & 43.18 & 24.29 & 33.39 \\
+     Llama3.1-8B (16k) & 34.11 & 44.72 & 30.05 & 31.96 & 48.86 & 25.19 & 35.81 \\ 
+     \midrule
+     \ours (8k) & 33.12 & 37.99 & 29.91 & 20.68 & 40.11 & 24.18 & 31.00 \\
+     \ours (16k) & 32.71 & 38.56 & 30.39 & 24.58 & 46.32 & 24.12 & 32.78 \\ % actually this is memoryllm-8b-fineweb-long
+     \bottomrule
+    \end{tabular}}
+    \vspace{-10pt}
+\end{table*}
+
+\subsection{Knowledge Retention Experiments}
+\label{sub:knowledge_retention_experiments}
+\subsubsection{Experimental Settings}
+To evaluate the ability of \ours to recall long-term knowledge, we follow the experimental setup in MemoryLLM~\citep{memoryllm} on datasets SQuAD and NaturalQA, formatted as \texttt{(context, question, answer)}, where \texttt{context} and \texttt{question} are sentences, and \texttt{answer} is the correct response to the question. Consistent with \citet{memoryllm}, we extract samples with \texttt{answer} lengths of three tokens or fewer for SQuAD and four tokens or fewer for NaturalQA. After filtering out ambiguous examples that \texttt{gpt-4o-mini} fails to answer, we select the first 100 examples from the remaining answerable set to conduct our evaluation. To test the model's long-term retention ability, we insert distracting contexts between \texttt{context} and \texttt{question}. These distracting contexts are sampled from the training set of SQuAD. Both NaturalQA and SQuAD are constructed from Wikipedia and they are within the same domain. Moreover, the contexts in SQuAD training set are of more consistent lengths (around 300-500 tokens for each context), thus we sample the distracting contexts from SQuAD training set for both NaturalQA and SQuAD. 
+
+We compare with the following baselines: 
+\textbf{MemoryLLM-7B}: The proposed model in \citet{memoryllm}, with the backbone Llama2-7B, and trained with C4 dataset. 
+\textbf{Llama-3.1-8B-SnapKV}: We fix the cache size to 16384 and dynamically adjust the remaining key-value caches in the cache pool according to the newly injected distracting contexts (consistent with the settings from Section \ref{sub:long_book_and_event_qa}). The maximum prompt length is set to 49,152 (48k), which requires over 70 GB of GPU memory. We use longer prompt length here as we want to explore more knowledge retention abilities of Llama-3.1-8B-SnapKV. 
+
+
+
+\vspace{-5pt}
+\subsubsection{Experimental Results}
+\vspace{-5pt}
+The experimental results on SQuAD are presented in Figure  \ref{fig:knowledge-retention-squad}. We present the results on NaturalQA in Appendix \ref{sub:knowledge_retention_nqa} (Figure \ref{fig:knowledge-retention-nqa}) as both figures have similar trends. From these figures, key observations include: (1) \ours significantly outperforms MemoryLLM-7B, demonstrating a substantial improvement in knowledge retention compared with the last version. (2) \ours surpasses Llama-3.1-8B equipped with SnapK, indicating that storing knowledge directly in memory is more effective than relying on key-value cache mechanisms. (3) Even though Llama-3.1-8B-SnapKV is given the context window 48k, it struggles to recall information injected more than 30k tokens earlier, highlighting the limitations of key-value cache methods for long-term knowledge retention. 
+
+\begin{figure}
+    \centering
+    \includegraphics[width=\linewidth]{figures/squad.pdf}
+    \vspace{-22pt}
+    \caption{Knowledge Retention Results on SQuAD.}
+    \label{fig:knowledge-retention-squad}
+    \vspace{-15pt}
+\end{figure}
+
+
+\vspace{-3pt}
+\subsection{Experimental Results on (Relatively) Short Documents}
+\vspace{-3pt}
+We evaluate the performance of \ours and Llama-3.1-8B on relatively short documents using the LongBench benchmark, considering input lengths of 8k and 16k tokens. The evaluation metric is QA-F1, following \citet{longbench}. The results, presented in Table \ref{tab:longbench}, show that \ours could match the performance of Llama-3.1-8B on 4 out of 6 datasets, except for \texttt{hotpotqa} and \texttt{musique}.
+This performance difference can be attributed to two primary factors: 
+(1) \textbf{Random Dropping Mechanism}: \ours employs a random dropping mechanism that can lead to partial information loss. For instance, processing an 8k input requires splitting it into 12 chunks (each chunk being 512 tokens), while the last 2k tokens are directly included in the generation context window. The first 6k tokens (12 chunks) are compressed into $256 + 256 * \frac{N-K}{N} + \cdots + 256 * (\frac{N-K}{N})^{11} = 2755.6$ tokens (with around 316.4 memory tokens dropped). For 16k tokens, the first 14k tokens are compressed 5530 tokens (with around 1638 tokens dropped). As some tokens are dropped, the performance may get affected slightly. Note that this could lead to a longer context window while sacrificing some of the performance in relatively shorter context tasks. 
+(2) \textbf{Limited Cross-Chunk Attention}: When processing chunks into memory, \ours uses the last $K$ tokens and the hidden states from the new chunk as input (illustrated in Figur e\ref{fig:update_and_generation}). In contrast, Llama-3.1-8B processes each chunk with access to all previous tokens, enabling cross-attention between chunks. While this approach allows Llama-3.1-8B to maintain full attention across chunks, it comes with significantly higher computational and memory costs due to the quadratic scaling of transformer computations. In comparison, \ours achieves linear computational scaling, making it more GPU-memory-efficient for processing extremely long inputs (see Section \ref{sub:gpu_memory_comparison}), albeit with some trade-off in performance in tasks with relatively shorter contexts. 
+
+
+
+
+
+\vspace{-5pt}
+\subsection{Ablation Study}
+\label{sub:ablation_study}
+\vspace{-3pt}
+\subsubsection{Ablation Study on long-term memory}
+\label{ssub:ablation_study_on_long_term_memory}
+\vspace{-3pt}
+In this section, we study the effectiveness of our long-term memory to ensure that the observed performance improvements over MemoryLLM-7B and Llama-3.1-8B-16k stem from the integration of LTM rather than solely from the additional training. Recall from Section \ref{ssub:data_curriculum} that the first two training stages do not use long-term memory. We compare with three models: (1) \textbf{MemoryLLM-8B}: The model obtained after Stage 1. It shares the same structure as MemoryLLM-7B~\citep{memoryllm} but upgrades the backbone from Llama-2-7B to Llama-3.1-8B and includes changes such as dataset shifts and multi-LoRA settings. (2) \textbf{MemoryLLM-8B-Long}: The model obtained after Stage 2. (3) \textbf{\ours}: The final model obtained after Stage 3. 
+
+\vspace{-5pt}
+\paragraph{Long Context Modeling Ability Improves Over Stages}
+We evaluate the three models on a held-out subset of Slim-Pajama containing 1000 examples with lengths between 32k and 64k tokens. We compute the validation loss for each model on this subset and report the results in Figure \ref{fig:loss_comparison}. The results demonstrate that long-context modeling ability improves progressively across training stages, with \ours achieving the lowest validation loss, indicating the strongest performance on long-context inputs. 
+
+\begin{figure}[t]
+    \centering
+    \vspace{-10pt}
+    \includegraphics[width=1.0\linewidth]{figures/loss.pdf}
+    \vspace{-20pt}
+    \caption{Validation loss comparison on a held-out subset from Slim-Pajama, consisting of 1,000 examples. The three models, MemoryLLM-8B, MemoryLLM-8B-Long, and \ours, are obtained after Stages 1, 2, and 3, respectively (Section \ref{ssub:data_curriculum}).} 
+    \label{fig:loss_comparison}
+    \vspace{-15pt}
+\end{figure}
+
+\vspace{-5pt}
+\paragraph{Long-term memory Significantly Improves Knowledge Retention}
+We further assess MemoryLLM-8B-Long and \ours on knowledge retention tasks using SQuAD and NaturalQA datasets with the same setting as in Section \ref{sub:knowledge_retention_experiments}. 
+In our experiments, we find MemoryLLM-8B-Long performs marginally better than MemoryLLM-8B on knowledge retention tasks, thus for simplicity, we omit the results of MemoryLLM-8B here.
+The results for MemoryLLM-8B-Long and \ours on dataset SQuAD are presented in Figure \ref{fig:squad_ablation} and the results on NaturalQA are presented in Appendix \ref{sub:ablation_study_naturalqa} (Figure \ref{fig:nqa_ablation}). 
+From the results, we can observe that (1) Despite having only 12,800 memory tokens, MemoryLLM-8B-Long retains knowledge for up to 30 tokens in NaturalQA and 50 tokens in SQuAD, demonstrating effective compression of information into memory tokens. (2) Stage 3 significantly enhances retention, extending the model's ability to recall knowledge from 50k to over 160 tokens. During inference, 2,560 tokens are retrieved from long-term memory, combined with 10,240 tokens from short-term memory, resulting in 12,800 effective memory tokens. These results underscore the effectiveness of our long-term memory mechanism in improving knowledge retention and handling extremely long contexts. 
+
+\vspace{-5pt}
+\paragraph{Long-term memory does not affect the performance on relatively short documents}
+To show whether long-term memory affects the model's performances on relatively short documents, we conduct ablation study with models from three different stages on the dataset LongBench while fixing the context window as 8k. The results are shown in Table \ref{tab:ablation_study_on_longbench}. From the table we can see that \ours has similar performance as MemoryLLM-8B-Long on 8k context window. This means adding long-term memory does not affect the performance on relatively short documents. Meanwhile, MemoryLLM-8B-Long is significantly better than MemoryLLM-8B, which can be attributed to the inclusion of longer training examples in Stage 2 (4k–64k), whereas \texttt{fineweb-edu} (used in Stage 1) contains very few examples longer than 4k.
+
+\begin{table*}[ht]
+    \centering
+    \caption{Ablation study of the effects of different stages on LongBench.}
+    \label{tab:ablation_study_on_longbench}
+    \resizebox{0.94\linewidth}{!}{
+    \begin{tabular}{ccccccccccc}
+    \toprule
+    & \textbf{2wikimqa} & \textbf{hotpotqa} & \textbf{qasper} & \textbf{musique} & \textbf{multifieldqa\_en} & \textbf{narrativeqa} & Avg \\
+    \midrule
+     MemoryLLM-8B (Stage 1, 8k) & 32.30 & 33.39 & 23.88 & 12.37 & 35.91 & 21.46 & 26.55 \\
+     MemoryLLM-8B-Long (Stage 2, 8k) & 32.23 & 37.86 & 31.62 & 20.35 & 42.16 & 23.49 & 31.29 \\
+     \ours (Stage 3, 8k) & 33.12 & 37.99 & 29.91 & 20.68 & 40.11 & 24.18 & 31.00 \\
+     \bottomrule
+    \end{tabular}}
+    \vspace{-10pt}
+\end{table*}
+
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.95\linewidth]{figures/squad_ablation.pdf}
+    \vspace{-15pt}
+    \caption{Ablation Study on SQuAD dataset.}
+    \label{fig:squad_ablation}
+    \vspace{-15pt}
+\end{figure}
+
+
+
+\vspace{-5pt}
+\subsubsection{Ablation Study on Retriever}
+\vspace{-5pt}
+
+We conduct an ablation study to evaluate the performance of our trained retriever compared to an attention-based retrieval method. Using the SQuAD and NaturalQA datasets, we compare \ours with an attention-based retrieval method inspired by H2O~\citep{h2o}. In the attention-based method (\ours-Attn), the key-value cache of past tokens is stored, and during generation, a fixed number of tokens are retrieved from the cached keys and values based on their attention scores. To match our approach, we use the same short-term memory as \ours, but the memory tokens in the long-term memory are retrieved according to the attention scores rather than using our retriever. To implement this method, we adapt \ours to store key-value caches instead of hidden states in the long-term memory to avoid any additional computation cost. During generation, for each token, we extract 2,560 keys and values for each head from the long-term memory, along with the 10,240 memory tokens in the current memory pool. The results on SQuAD are shown in  Figures \ref{fig:squad_ablation} and the results on NaturalQA are shown in Appendix \ref{sub:ablation_study_naturalqa} (Figure \ref{fig:nqa_ablation}). From the figures we can see that \ours substantially outperforms \ours-Attn, showing the advantages of our trained retriever over the attention-based approach in terms of knowledge retention and retrieval efficiency. 
+
+
+\vspace{-5pt}
+\subsection{Analysis}
+
+\subsubsection{Model Quality within Context Window}
+\ours uses 12,800 memory tokens alongside a 2,048-token generation context window. In this section, we evaluate the model's performance within the standard 2,048-token context window to ensure that the addition of memory does not degrade its base capability. We randomly select 1,000 examples from the \texttt{fineweb-edu} dataset (snapshot \texttt{CC-MAIN-2024-10}), which does not overlap with the training data. For this evaluation, we cap the input sequence length at 2,048 tokens and report perplexity for both \ours and LLaMA-3.1-8B. The results show that LLaMA-3.1-8B achieves a perplexity of 1.9734, while \ours records a similar perplexity of 1.9828. These findings indicate that \ours maintains competitive performance on documents shorter than 2,048 tokens, confirming that the base model’s quality within the context window remains intact.
+
+\subsubsection{Retrieval Quality}
+\vspace{-3pt}
+In our implementation, the long-term memory is initially of size 5120, and then it gradually increases to 80k in our knowledge retention experiments (it hits 81,276 when there 160k tokens are injected). To access retrieval quality, we leverage the knowledge retention task with SQuAD dataset, where the first $K=256$ tokens are critical for answering the questions. These $K=256$ tokens are denoted as ground-truth tokens. We track the number of ground-truth tokens in the long-term memory and how many tokens are retrieved back into the ``Extracted LTM'' pool in Figure \ref{fig:update_and_generation} when queried after various numbers of tokens are injected. We present the results in Figure \ref{fig:recall_curve_squad}, demonstrating the retrieval quality as more tokens are dropped from the memory pool to the long-term memory. From the figure we can see that around 30\% tokens are retrieved. For reference, random retrieval would retrieve $2,560/81,276 = 3\%$ tokens. 
+
+\begin{figure}
+    \centering
+    \includegraphics[width=\linewidth]{figures/recall_curve_squad.pdf}
+    \vspace{-20pt}
+    \caption{Number of ground-truth tokens in long-term memory and the number of retrieved groud-truth tokens as more tokens are injected into the memory.}
+    \label{fig:recall_curve_squad}
+    \vspace{-10pt}
+\end{figure}
+
+
+\vspace{-5pt}
+\subsubsection{Latency Analysis}
+\label{sub:latency_analysis}
+\vspace{-5pt}
+While \ours introduces additional computation due to the memory token retrieval from the long-term memory, we perform a detailed analysis to quantify this latency. Specifically, we analyze latency under the setting of a 128k input. For reference, we use the processing time of Llama-3.1-8B performing a forward pass on 131,071 (=128k-1) tokens to generate the final token. To ensure fairness, we inject 131,072 - 2,048 tokens into the memory and ask \ours to predict the last token using the remaining 2,047 tokens. 
+We focus on the following settings: (1) Llama-3.1-8B-128k. To analyze the latency, we use Llama-3.1-8B with a full context window 128k; (2) MemoryLLM-8B (After Stage 1); (3) \ours (After Stage 3); (4) MemoryLLM-8B (Offload): we offload the memory onto CPU and load the corresponding memory tokens into GPU when the computation hits a certain layer; (5) \ours (offload): Offloading the memory onto CPU and load them back when necessary. 
+All experiments in this section are conducted on a single H100 GPU. The results are shown in Figure \ref{fig:latency_analysis}. From the figure, we could find that (1) MemoryLLM-8B has slightly higher latency than Llama-3.1-8B in relatively shorter documents (16k, 32k, 64k) but has lower latency on long documents (128k); (2) \ours has higher latency than MemoryLLM-8B, where the latency is mainly introduced by the retrieval process. (3) Offloading the memory onto CPU introduces slightly more latency, while it becomes negligible when the sequence grows longer. In the case of 128k input, the introduced latency for \ours (offload) compared with \ours is 1 second, leading to 3\% additional computation time for \ours. 
+
+\begin{figure}
+    \centering
+    \includegraphics[width=\linewidth]{figures/latency_comparison.pdf}
+    \vspace{-20pt}
+    \caption{Latency Analysis}
+    \label{fig:latency_analysis}
+    \vspace{-10pt}
+\end{figure}

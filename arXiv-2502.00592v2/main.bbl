@@ -1,0 +1,223 @@
+\begin{thebibliography}{41}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Al~Adel \& Burtsev(2021)Al~Adel and Burtsev]{al2021memory}
+Al~Adel, A. and Burtsev, M.~S.
+\newblock Memory transformer with hierarchical attention for long document processing.
+\newblock In \emph{2021 International Conference Engineering and Telecommunication (En\&T)}, pp.\  1--7. IEEE, 2021.
+
+\bibitem[Bai et~al.(2023)Bai, Lv, Zhang, Lyu, Tang, Huang, Du, Liu, Zeng, Hou, et~al.]{longbench}
+Bai, Y., Lv, X., Zhang, J., Lyu, H., Tang, J., Huang, Z., Du, Z., Liu, X., Zeng, A., Hou, L., et~al.
+\newblock Longbench: A bilingual, multitask benchmark for long context understanding.
+\newblock \emph{arXiv preprint arXiv:2308.14508}, 2023.
+
+\bibitem[Belcak \& Wattenhofer(2024)Belcak and Wattenhofer]{tiny_transformers_for_text_compression}
+Belcak, P. and Wattenhofer, R.
+\newblock Tiny transformers excel at sentence compression.
+\newblock \emph{arXiv preprint arXiv:2410.23510}, 2024.
+
+\bibitem[Bellard(2021)]{nncp_v2}
+Bellard, F.
+\newblock Nncp v2: Lossless data compression with transformer.
+\newblock Technical report, Technical report, Amarisoft, 2021.
+
+\bibitem[Bulatov et~al.(2022)Bulatov, Kuratov, and Burtsev]{RMT}
+Bulatov, A., Kuratov, Y., and Burtsev, M.~S.
+\newblock Recurrent memory transformer.
+\newblock In \emph{NeurIPS}, 2022.
+
+\bibitem[Bulatov et~al.(2023)Bulatov, Kuratov, Kapushev, and Burtsev]{bulatov2023scaling}
+Bulatov, A., Kuratov, Y., Kapushev, Y., and Burtsev, M.~S.
+\newblock Scaling transformer to 1m tokens and beyond with rmt.
+\newblock \emph{arXiv preprint arXiv:2304.11062}, 2023.
+
+\bibitem[Chen et~al.(2024)Chen, Jiang, Chang, Hsieh, Yu, and Wang]{chen-etal-2024-minprompt}
+Chen, X., Jiang, J.-Y., Chang, W.-C., Hsieh, C.-J., Yu, H.-F., and Wang, W.
+\newblock {M}in{P}rompt: Graph-based minimal prompt data augmentation for few-shot question answering.
+\newblock In Ku, L.-W., Martins, A., and Srikumar, V. (eds.), \emph{Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers)}, pp.\  254--266, Bangkok, Thailand, August 2024. Association for Computational Linguistics.
+\newblock \doi{10.18653/v1/2024.acl-long.16}.
+\newblock URL \url{https://aclanthology.org/2024.acl-long.16/}.
+
+\bibitem[Das et~al.(2024)Das, Chaudhury, Nelson, Melnyk, Swaminathan, Dai, Lozano, Kollias, Chenthamarakshan, Navr{\'{a}}til, Dan, and Chen]{larimar}
+Das, P., Chaudhury, S., Nelson, E., Melnyk, I., Swaminathan, S., Dai, S., Lozano, A.~C., Kollias, G., Chenthamarakshan, V., Navr{\'{a}}til, J., Dan, S., and Chen, P.
+\newblock Larimar: Large language models with episodic memory control.
+\newblock In \emph{{ICML}}. OpenReview.net, 2024.
+
+\bibitem[Dubey et~al.(2024)Dubey, Jauhri, Pandey, Kadian, Al{-}Dahle, Letman, Mathur, Schelten, Yang, Fan, Goyal, Hartshorn, Yang, Mitra, Sravankumar, Korenev, Hinsvark, Rao, Zhang, Rodriguez, Gregerson, Spataru, Rozi{\`{e}}re, Biron, Tang, Chern, Caucheteux, Nayak, Bi, Marra, McConnell, Keller, Touret, Wu, Wong, Ferrer, Nikolaidis, Allonsius, Song, Pintz, Livshits, Esiobu, Choudhary, Mahajan, Garcia{-}Olano, Perino, Hupkes, Lakomkin, AlBadawy, Lobanova, Dinan, Smith, Radenovic, Zhang, Synnaeve, Lee, Anderson, Nail, Mialon, Pang, Cucurell, Nguyen, Korevaar, Xu, Touvron, Zarov, Ibarra, Kloumann, Misra, Evtimov, Copet, Lee, Geffert, Vranes, Park, Mahadeokar, Shah, van~der Linde, Billock, Hong, Lee, Fu, Chi, Huang, Liu, Wang, Yu, Bitton, Spisak, Park, Rocca, Johnstun, Saxe, Jia, Alwala, Upasani, Plawiak, Li, Heafield, Stone, and et~al.]{llama3}
+Dubey, A., Jauhri, A., Pandey, A., Kadian, A., Al{-}Dahle, A., Letman, A., Mathur, A., Schelten, A., Yang, A., Fan, A., Goyal, A., Hartshorn, A., Yang, A., Mitra, A., Sravankumar, A., Korenev, A., Hinsvark, A., Rao, A., Zhang, A., Rodriguez, A., Gregerson, A., Spataru, A., Rozi{\`{e}}re, B., Biron, B., Tang, B., Chern, B., Caucheteux, C., Nayak, C., Bi, C., Marra, C., McConnell, C., Keller, C., Touret, C., Wu, C., Wong, C., Ferrer, C.~C., Nikolaidis, C., Allonsius, D., Song, D., Pintz, D., Livshits, D., Esiobu, D., Choudhary, D., Mahajan, D., Garcia{-}Olano, D., Perino, D., Hupkes, D., Lakomkin, E., AlBadawy, E., Lobanova, E., Dinan, E., Smith, E.~M., Radenovic, F., Zhang, F., Synnaeve, G., Lee, G., Anderson, G.~L., Nail, G., Mialon, G., Pang, G., Cucurell, G., Nguyen, H., Korevaar, H., Xu, H., Touvron, H., Zarov, I., Ibarra, I.~A., Kloumann, I.~M., Misra, I., Evtimov, I., Copet, J., Lee, J., Geffert, J., Vranes, J., Park, J., Mahadeokar, J., Shah, J., van~der Linde, J., Billock, J., Hong, J., Lee, J., Fu,
+  J., Chi, J., Huang, J., Liu, J., Wang, J., Yu, J., Bitton, J., Spisak, J., Park, J., Rocca, J., Johnstun, J., Saxe, J., Jia, J., Alwala, K.~V., Upasani, K., Plawiak, K., Li, K., Heafield, K., Stone, K., and et~al.
+\newblock The llama 3 herd of models.
+\newblock \emph{CoRR}, abs/2407.21783, 2024.
+
+\bibitem[Fedorenko et~al.(2024)Fedorenko, Piantadosi, and Gibson]{fedorenko2024language}
+Fedorenko, E., Piantadosi, S.~T., and Gibson, E.~A.
+\newblock Language is primarily a tool for communication rather than thought.
+\newblock \emph{Nature}, 630\penalty0 (8017):\penalty0 575--586, 2024.
+
+\bibitem[Fu et~al.(2024)Fu, Panda, Niu, Yue, Hajishirzi, Kim, and Peng]{data_engineering_for_longcontext}
+Fu, Y., Panda, R., Niu, X., Yue, X., Hajishirzi, H., Kim, Y., and Peng, H.
+\newblock Data engineering for scaling language models to 128k context.
+\newblock In \emph{Forty-first International Conference on Machine Learning, {ICML} 2024, Vienna, Austria, July 21-27, 2024}. OpenReview.net, 2024.
+\newblock URL \url{https://openreview.net/forum?id=TaAqeo7lUh}.
+
+\bibitem[Ge et~al.(2024)Ge, Hu, Wang, Wang, Chen, and Wei]{in-context-auto-encoder}
+Ge, T., Hu, J., Wang, L., Wang, X., Chen, S., and Wei, F.
+\newblock In-context autoencoder for context compression in a large language model.
+\newblock In \emph{The Twelfth International Conference on Learning Representations, {ICLR} 2024, Vienna, Austria, May 7-11, 2024}. OpenReview.net, 2024.
+\newblock URL \url{https://openreview.net/forum?id=uREj4ZuGJE}.
+
+\bibitem[Guti{\'e}rrez et~al.(2024)Guti{\'e}rrez, Shu, Gu, Yasunaga, and Su]{gutierrez2024hipporag}
+Guti{\'e}rrez, B.~J., Shu, Y., Gu, Y., Yasunaga, M., and Su, Y.
+\newblock Hipporag: Neurobiologically inspired long-term memory for large language models.
+\newblock \emph{arXiv preprint arXiv:2405.14831}, 2024.
+
+\bibitem[Hao et~al.(2024)Hao, Sukhbaatar, Su, Li, Hu, Weston, and Tian]{coconut}
+Hao, S., Sukhbaatar, S., Su, D., Li, X., Hu, Z., Weston, J., and Tian, Y.
+\newblock Training large language models to reason in a continuous latent space.
+\newblock \emph{arXiv preprint arXiv:2412.06769}, 2024.
+
+\bibitem[He et~al.(2024)He, Karlinsky, Kim, McAuley, Krotov, and Feris]{he2024camelot}
+He, Z., Karlinsky, L., Kim, D., McAuley, J., Krotov, D., and Feris, R.
+\newblock Camelot: Towards large language models with training-free consolidated associative memory.
+\newblock \emph{arXiv preprint arXiv:2402.13449}, 2024.
+
+\bibitem[Hu et~al.(2023)Hu, Fu, Du, Luo, Zhao, and Zhao]{hu2023chatdb}
+Hu, C., Fu, J., Du, C., Luo, S., Zhao, J., and Zhao, H.
+\newblock Chatdb: Augmenting llms with databases as their symbolic memory.
+\newblock \emph{arXiv preprint arXiv:2306.03901}, 2023.
+
+\bibitem[Jawahar et~al.(2019)Jawahar, Sagot, and Seddah]{jawahar2019does}
+Jawahar, G., Sagot, B., and Seddah, D.
+\newblock What does bert learn about the structure of language?
+\newblock In \emph{ACL 2019-57th Annual Meeting of the Association for Computational Linguistics}, 2019.
+
+\bibitem[Khandelwal et~al.(2019)Khandelwal, Levy, Jurafsky, Zettlemoyer, and Lewis]{kNNLM}
+Khandelwal, U., Levy, O., Jurafsky, D., Zettlemoyer, L., and Lewis, M.
+\newblock Generalization through memorization: Nearest neighbor language models.
+\newblock \emph{arXiv preprint arXiv:1911.00172}, 2019.
+
+\bibitem[Li et~al.(2024)Li, Huang, Yang, Venkitesh, Locatelli, Ye, Cai, Lewis, and Chen]{snapkv}
+Li, Y., Huang, Y., Yang, B., Venkitesh, B., Locatelli, A., Ye, H., Cai, T., Lewis, P., and Chen, D.
+\newblock Snapkv: {LLM} knows what you are looking for before generation.
+\newblock \emph{CoRR}, abs/2404.14469, 2024.
+\newblock \doi{10.48550/ARXIV.2404.14469}.
+\newblock URL \url{https://doi.org/10.48550/arXiv.2404.14469}.
+
+\bibitem[Modarressi et~al.(2024)Modarressi, K{\"o}ksal, Imani, Fayyaz, and Sch{\"u}tze]{memllm}
+Modarressi, A., K{\"o}ksal, A., Imani, A., Fayyaz, M., and Sch{\"u}tze, H.
+\newblock Memllm: Finetuning llms to use an explicit read-write memory.
+\newblock \emph{arXiv preprint arXiv:2404.11672}, 2024.
+
+\bibitem[Packer et~al.(2023)Packer, Fang, Patil, Lin, Wooders, and Gonzalez]{memgpt}
+Packer, C., Fang, V., Patil, S.~G., Lin, K., Wooders, S., and Gonzalez, J.~E.
+\newblock Memgpt: Towards llms as operating systems.
+\newblock \emph{CoRR}, abs/2310.08560, 2023.
+
+\bibitem[Park \& Bak(2024)Park and Bak]{Memoria}
+Park, S. and Bak, J.
+\newblock Memoria: Resolving fateful forgetting problem through human-inspired memory architecture, 2024.
+
+\bibitem[Penedo et~al.(2024)Penedo, Kydl{\'{\i}}cek, Allal, Lozhkov, Mitchell, Raffel, von Werra, and Wolf]{fineweb}
+Penedo, G., Kydl{\'{\i}}cek, H., Allal, L.~B., Lozhkov, A., Mitchell, M., Raffel, C., von Werra, L., and Wolf, T.
+\newblock The fineweb datasets: Decanting the web for the finest text data at scale.
+\newblock \emph{CoRR}, abs/2406.17557, 2024.
+\newblock \doi{10.48550/ARXIV.2406.17557}.
+\newblock URL \url{https://doi.org/10.48550/arXiv.2406.17557}.
+
+\bibitem[Pham et~al.(2024)Pham, Ngo, Luu, and Nguyen]{whoswho}
+Pham, Q.~H., Ngo, H., Luu, A.~T., and Nguyen, D.~Q.
+\newblock Who's who: Large language models meet knowledge conflicts in practice.
+\newblock \emph{arXiv preprint arXiv:2410.15737}, 2024.
+
+\bibitem[Raffel et~al.(2020)Raffel, Shazeer, Roberts, Lee, Narang, Matena, Zhou, Li, and Liu]{T5}
+Raffel, C., Shazeer, N., Roberts, A., Lee, K., Narang, S., Matena, M., Zhou, Y., Li, W., and Liu, P.~J.
+\newblock Exploring the limits of transfer learning with a unified text-to-text transformer.
+\newblock \emph{J. Mach. Learn. Res.}, 21:\penalty0 140:1--140:67, 2020.
+\newblock URL \url{https://jmlr.org/papers/v21/20-074.html}.
+
+\bibitem[Rahman et~al.(2024)Rahman, Sobhani, Rodela, and Shatabda]{enhanced_text_compression}
+Rahman, C.~M., Sobhani, M.~E., Rodela, A.~T., and Shatabda, S.
+\newblock An enhanced text compression approach using transformer-based language models.
+\newblock \emph{CoRR}, abs/2412.15250, 2024.
+
+\bibitem[Rakotonirina \& Baroni(2024)Rakotonirina and Baroni]{rakotonirina2024memoryprompt}
+Rakotonirina, N.~C. and Baroni, M.
+\newblock Memoryprompt: A light wrapper to improve context tracking in pre-trained language models.
+\newblock \emph{arXiv preprint arXiv:2402.15268}, 2024.
+
+\bibitem[Simoulin \& Crabb{\'e}(2021)Simoulin and Crabb{\'e}]{simoulin2021many}
+Simoulin, A. and Crabb{\'e}, B.
+\newblock How many layers and why? an analysis of the model depth in transformers.
+\newblock In \emph{Proceedings of the 59th Annual Meeting of the Association for Computational Linguistics and the 11th International Joint Conference on Natural Language Processing: Student Research Workshop}, pp.\  221--228, 2021.
+
+\bibitem[Wang et~al.(2023)Wang, Dong, Cheng, Liu, Yan, Gao, and Wei]{LongMEM}
+Wang, W., Dong, L., Cheng, H., Liu, X., Yan, X., Gao, J., and Wei, F.
+\newblock Augmenting language models with long-term memory.
+\newblock \emph{arXiv preprint arXiv:2306.07174}, 2023.
+
+\bibitem[Wang et~al.(2024{\natexlab{a}})Wang, Gao, Chen, Jiang, Li, Yang, Yin, Li, Li, Yin, Shang, and McAuley]{memoryllm}
+Wang, Y., Gao, Y., Chen, X., Jiang, H., Li, S., Yang, J., Yin, Q., Li, Z., Li, X., Yin, B., Shang, J., and McAuley, J.~J.
+\newblock {MEMORYLLM:} towards self-updatable large language models.
+\newblock In \emph{{ICML}}. OpenReview.net, 2024{\natexlab{a}}.
+
+\bibitem[Wang et~al.(2024{\natexlab{b}})Wang, Han, Wu, He, Zhou, Sadeq, Chen, He, Wang, Haffari, Ji, and McAuley]{lscs}
+Wang, Y., Han, C., Wu, T., He, X., Zhou, W., Sadeq, N., Chen, X., He, Z., Wang, W., Haffari, G., Ji, H., and McAuley, J.~J.
+\newblock Towards lifespan cognitive systems.
+\newblock \emph{CoRR}, abs/2409.13265, 2024{\natexlab{b}}.
+
+\bibitem[Wang et~al.(2024{\natexlab{c}})Wang, Liu, Chen, O'Brien, Wu, and McAuley]{self-param}
+Wang, Y., Liu, X., Chen, X., O'Brien, S., Wu, J., and McAuley, J.
+\newblock Self-updatable large language models with parameter integration.
+\newblock \emph{arXiv preprint arXiv:2410.00487}, 2024{\natexlab{c}}.
+
+\bibitem[Wang et~al.(2024{\natexlab{d}})Wang, Wu, He, Chen, and McAuley]{wang2024large}
+Wang, Y., Wu, R., He, Z., Chen, X., and McAuley, J.
+\newblock Large scale knowledge washing.
+\newblock \emph{arXiv preprint arXiv:2405.16720}, 2024{\natexlab{d}}.
+
+\bibitem[Wu et~al.(2022{\natexlab{a}})Wu, Xiao, Sun, Zhang, Ma, and He]{wu2022survey}
+Wu, X., Xiao, L., Sun, Y., Zhang, J., Ma, T., and He, L.
+\newblock A survey of human-in-the-loop for machine learning.
+\newblock \emph{Future Generation Computer Systems}, 135:\penalty0 364--381, 2022{\natexlab{a}}.
+
+\bibitem[Wu et~al.(2022{\natexlab{b}})Wu, Rabe, Hutchins, and Szegedy]{MemoringTransformers}
+Wu, Y., Rabe, M.~N., Hutchins, D., and Szegedy, C.
+\newblock Memorizing transformers.
+\newblock In \emph{The Tenth International Conference on Learning Representations, {ICLR} 2022, Virtual Event, April 25-29, 2022}. OpenReview.net, 2022{\natexlab{b}}.
+\newblock URL \url{https://openreview.net/forum?id=TrjbxzRcnf-}.
+
+\bibitem[Yang et~al.(2024)Yang, Lin, Wang, Wu, Li, Tang, Wei, Wang, Tang, Song, Xi, Yu, Chen, Xiong, Tang, and E]{memory3}
+Yang, H., Lin, Z., Wang, W., Wu, H., Li, Z., Tang, B., Wei, W., Wang, J., Tang, Z., Song, S., Xi, C., Yu, Y., Chen, K., Xiong, F., Tang, L., and E, W.
+\newblock Memory\({}^{\mbox{3}}\): Language modeling with explicit memory.
+\newblock \emph{CoRR}, abs/2407.01178, 2024.
+
+\bibitem[Yin et~al.(2024)Yin, Sun, Guo, Zeng, Cheng, Qiu, and Huang]{em2}
+Yin, Z., Sun, Q., Guo, Q., Zeng, Z., Cheng, Q., Qiu, X., and Huang, X.
+\newblock Explicit memory learning with expectation maximization.
+\newblock In \emph{{EMNLP}}, pp.\  16618--16635. Association for Computational Linguistics, 2024.
+
+\bibitem[Zhang et~al.(2024)Zhang, Chen, Hu, Xu, Chen, Hao, Han, Thai, Wang, Liu, et~al.]{infinitebench}
+Zhang, X., Chen, Y., Hu, S., Xu, Z., Chen, J., Hao, M., Han, X., Thai, Z., Wang, S., Liu, Z., et~al.
+\newblock $\infty$bench: Extending long context evaluation beyond 100k tokens.
+\newblock In \emph{Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers)}, pp.\  15262--15277, 2024.
+
+\bibitem[Zhang et~al.(2023)Zhang, Sheng, Zhou, Chen, Zheng, Cai, Song, Tian, R{\'{e}}, Barrett, Wang, and Chen]{h2o}
+Zhang, Z., Sheng, Y., Zhou, T., Chen, T., Zheng, L., Cai, R., Song, Z., Tian, Y., R{\'{e}}, C., Barrett, C.~W., Wang, Z., and Chen, B.
+\newblock {H2O:} heavy-hitter oracle for efficient generative inference of large language models.
+\newblock In \emph{NeurIPS}, 2023.
+
+\bibitem[Zhong et~al.(2023)Zhong, Guo, Gao, and Wang]{MemoryBank}
+Zhong, W., Guo, L., Gao, Q., and Wang, Y.
+\newblock Memorybank: Enhancing large language models with long-term memory.
+\newblock \emph{arXiv preprint arXiv:2305.10250}, 2023.
+
+\bibitem[Zhou et~al.(2023)Zhou, Jiang, Cui, Wang, Xiao, Hou, Cotterell, and Sachan]{zhou2023recurrentgpt}
+Zhou, W., Jiang, Y.~E., Cui, P., Wang, T., Xiao, Z., Hou, Y., Cotterell, R., and Sachan, M.
+\newblock Recurrentgpt: Interactive generation of (arbitrarily) long text.
+\newblock \emph{arXiv preprint arXiv:2305.13304}, 2023.
+
+\end{thebibliography}

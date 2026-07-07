@@ -9,8 +9,9 @@ from tqdm import trange
 from omegaconf import OmegaConf
 from collections import OrderedDict
 import copy
-from transformers import LlamaTokenizer
+from transformers import AutoTokenizer
 from modeling_memoryllm import MemoryLLM
+from modeling_mplus import MPlus
 from torch.utils.data import Dataset, DataLoader
 from dataset.nq import NQDataset
 from dataset.squad import SQuADDataset
@@ -341,6 +342,34 @@ def calculate_exact_hit_accuracy(predictions, targets):
         count += 1
     return hit/count
 
+def load_model_and_tokenizer(model_path, split_model=False):
+    tokenizer = AutoTokenizer.from_pretrained(model_path)
+    
+    if "mplus" in model_path.lower():
+        print(f"Loading MPlus model from {model_path}...")
+        try:
+            if not split_model:
+                model = MPlus.from_pretrained(model_path, attn_implementation="flash_attention_2", torch_dtype=torch.bfloat16).cuda()
+            else:
+                model = MPlus.from_pretrained(model_path, attn_implementation="flash_attention_2", torch_dtype=torch.bfloat16, device_map='auto')
+        except Exception as e:
+            print(f"Failed loading MPlus with flash_attention_2: {e}. Trying default attention implementation...")
+            if not split_model:
+                model = MPlus.from_pretrained(model_path, torch_dtype=torch.bfloat16).cuda()
+            else:
+                model = MPlus.from_pretrained(model_path, torch_dtype=torch.bfloat16, device_map='auto')
+        model = model.to(torch.bfloat16)
+        model.put_ltm_to_numpy()
+    else:
+        print(f"Loading MemoryLLM model from {model_path}...")
+        if not split_model:
+            model = MemoryLLM.from_pretrained(model_path).cuda()
+        else:
+            model = MemoryLLM.from_pretrained(model_path, device_map='auto')
+        model = model.to(torch.float16)
+        
+    return model, tokenizer
+
 if __name__ == "__main__":
 
     parser = get_parser()
@@ -376,15 +405,8 @@ if __name__ == "__main__":
                     generated_results = json.load(open(filename, 'r'))
                     
                 else:
-                    if model is None:
-                        if not opt.split_model:
-                            model = MemoryLLM.from_pretrained(opt.model).cuda()
-                            
-                        else:
-                            model = MemoryLLM.from_pretrained(opt.model, device_map='auto')
-                    
-                    if tokenizer is None:
-                        tokenizer = LlamaTokenizer.from_pretrained(opt.model)
+                    if model is None or tokenizer is None:
+                        model, tokenizer = load_model_and_tokenizer(opt.model, opt.split_model)
 
                     middle_outputs, targets, contexts_middle, questions = run_qa(model, tokenizer, dataset, step=opt.nuc)
 
@@ -463,16 +485,9 @@ if __name__ == "__main__":
                     tokenizer = None
                     middle_outputs, targets, contexts_middle, questions = run_qa(model, tokenizer, dataset, step=opt.nuc)
                     
-                if model is None:
-                    if not opt.split_model:
-                        model = MemoryLLM.from_pretrained(opt.model).cuda()
-                    else:
-                        model = MemoryLLM.from_pretrained(opt.model, device_map='auto')
-                
-                model = model.to(torch.float16)
-                
-                if tokenizer is None:
-                    tokenizer = LlamaTokenizer.from_pretrained(opt.model)
+                else:
+                    if model is None or tokenizer is None:
+                        model, tokenizer = load_model_and_tokenizer(opt.model, opt.split_model)
 
                 middle_outputs, targets, contexts_middle, questions = run_qa(model, tokenizer, dataset, step=opt.nuc)
 

@@ -1,0 +1,32 @@
+\vspace{-20pt}
+\section{Introduction}
+\label{sec:introduction}
+The integration of memory modules into large language models (LLMs) has gained increasing attention~\citep{lscs}. 
+Existing approaches for constructing memory modules can be broadly divided into two main categories: (1) Token-level memory~\citep{memgpt,memllm}, where memory is represented as structured text, enabling direct retrieval and manipulation of information at the token level; and (2) Latent-space memory, where memory is stored as high-dimensional vectors in the hidden space, offering a more abstract and compact representation of information. Token-level memory provides adaptability (the base model can be easily replaced) and interpretability (text-based format is easy to understand for humans). 
+However, such text-based memory could be redundant as text format may not be the most compressed method for representing information~\citep{nncp_v2,tiny_transformers_for_text_compression,enhanced_text_compression},  
+and resolving conflicting information in text-based memory can be challenging~\citep{whoswho}. Meanwhile, as noted by \citet{fedorenko2024language,coconut}, human reasoning often transcends the token level, leveraging deeper, integrated representations akin to latent spaces. 
+
+\vspace{-3pt}
+
+In contrast, Latent-Space Memory offers unique advantages: (1) \textbf{Efficient Compression}: Information is compressed into hidden states~\citep{memoryllm}, internalized into model parameters~\citep{self-param}, or stored in a more compact latent space~\citep{larimar}. These methods reduce storage overhead, with some approaches even embedding knowledge directly into model parameters, eliminating the need for external storage~\citep{self-param}. (2) \textbf{End-to-End Training}: Latent-space memory can be involved in gradient-based optimization, allowing it to be updated and refined during training. This enables the integration of memory into the training loop~\citep{em2,LongMEM,in-context-auto-encoder}.
+(3) \textbf{Similarity to Human Memory}: As suggested by \citet{fedorenko2024language} and \citet{coconut}, human reasoning relies on integrated representations beyond discrete tokens, akin to latent spaces. By encoding knowledge in latent representations, the methods with latent-space memory can more closely mimic the mechanisms of human memory, which store information within neural activations. 
+
+\vspace{-3pt}
+
+In this paper, we focus on Latent-Space Memory. MemoryLLM~\citep{memoryllm}, as a representative work in this category,
+enhances a transformer-based language model by incorporating a large number of memory tokens into each layer, creating a memory pool with 1 billion parameters. This framework introduces a carefully designed update and generate process, achieving superior performance compared to the backbone model Llama-2-7B and other long-context methods. However, MemoryLLM faces limitations in recalling information injected beyond 20k tokens, restricting its long-term retention capabilities.
+To address this limitation, we propose \textbf{\ours}, a novel model incorporating a long-term memory mechanism alongside MemoryLLM.
+Unlike previous approaches such as H2O~\citep{h2o} and SnapKV~\citep{snapkv}, which store keys and values from past contexts and perform retrieval separately for each query head and layer—leading to high latency—\ours optimizes retrieval in the space of hidden states via co-training the retriever and the language model.  This allows \ours to retrieve only once per layer for all query heads, significantly improving efficiency. 
+Furthermore, as the long-term memory is stored on the CPU, \ours significantly extends long-term retention capabilities without increasing GPU memory usage. 
+
+
+We evaluate \ours across a diverse set of benchmarks, including tasks such as long-book understanding, knowledge retention, and question answering on relatively short documents. Experimental results demonstrate that \ours achieves significant performance improvements in all long benchmarks compared to previous memory-based methods while operating within the same or even smaller inference memory budget. In summary, our contributions are as follows:
+\vspace{-5pt}
+
+\begin{itemize}
+\item We enhance MemoryLLM by incorporating a long-term memory mechanism and introducing a co-trained retriever for efficient and effective memory retrieval.
+\vspace{-5pt}
+\item We design a specialized data curriculum for long-context training, enhancing the long-context modeling ability of \ours. 
+\vspace{-5pt}
+\item Through extensive experiments on multiple benchmarks, we demonstrate that \ours significantly outperforms the baselines while maintaining a similar or reduced GPU memory footprint.
+\end{itemize}

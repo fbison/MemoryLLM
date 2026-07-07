@@ -1,0 +1,82 @@
+\vspace{-5pt}
+\section{Methodology}
+\subsection{Preliminaries}
+\label{sub:preliminary}
+We first introduce the structure of MemoryLLM~\citep{memoryllm}, which serves as the base structure of \ours. 
+MemoryLLM comprises two main components: $\theta$ (the memory pool) and $\phi$ (a transformer-based decoder-only language model). The memory pool $\theta$ consists of $L$ layers: $\{\theta_l\}_{l=1}^{L}$ where $L$ is the number of layers in the transformer $\phi$. For every layer, $\theta_l$ has $N$ memory tokens, where each token is a vector in $\mathbb{R}^{d}$, with $d$ representing the hidden size of the language model. During the update process, the last $K$ tokens from the $l$-th layer’s memory pool, $\theta_l$, are extracted and combined with the chunk to be injected. The resulting new $K$ tokens are then merged back into $\theta_l$ (illustrated in Figure \ref{fig:update_and_generation}). Merging is achieved by randomly dropping $K$ tokens from $\theta_l$ and appending the new $K$ tokens to the end. 
+During generation, the memory pool $\theta_l$ is perceived using cross-attention. 
+
+
+
+\vspace{-5pt}
+\subsection{Equipping MemoryLLM with Long-Term Memory}
+In this section, we explain how we instantiate the long-term memory
+and how it integrates with the language model $\phi$ and the original memory pool $\theta$ in MemoryLLM. In this paper, we term the original memory pool $\theta$ as short-term memory to distinguish it from the new long-term memory. 
+
+\vspace{-5pt}
+\subsubsection{Memory Structures}
+We denote the long-term memory as $\Theta$. Similarly, it has $L$ layers $\{\Theta_l\}_{l=1}^N$. Each layer has a long-term memory pool where the size is flexible. We specify a maximum size for the long-term memory. The maximum size of the long-term memory is denoted as $M$ and 
+the size of long-term memory is flexible. In practice, we choose $M$ to be 150k. Then we introduce the update and generate process of \ours:
+
+\vspace{-10pt}
+\paragraph{Update Process} During the update process, note that in the original MemoryLLM, $K$ tokens are dropped from $\theta$ during updates and are permanently discarded. In \ours, the dropped $K$ tokens are instead stored in the long-term memory $\Theta$, ensuring their retention for extended durations (as illustrated in Figure \ref{fig:update_and_generation}). We assign each token the variable ``age'' so that after retrieving tokens from $\Theta$ we can sort these tokens according to age, ensuring that the tokens are chronologically ordered. As for the new $K$ tokens, they are obtained with the same process as in MemoryLLM, described in Figure \ref{fig:update_and_generation}. When the memory tokens in the long-term memory reach the maximum capacity, i.e., $M$ tokens, we would drop the tokens with the largest ages.
+
+\vspace{-10pt}
+\paragraph{Generation Process} During generation, at each layer, we extract $K_0$ tokens from the long-term memory $\Theta_l$ using a retrieval mechanism described below, sort them by their ages, and concatenate them with the short-term memory $\theta_l$. This allows the query hidden states to access both the extracted long-term memory and the short-term memory using cross-attention, enabling the query to retrieve relevant information from the memory. 
+
+\vspace{-10pt}
+\paragraph{Multi-LoRA Design}
+In our training, we use two sets of LoRA weights, one is activated during the update process, and the other is activated during the generation process (as shown in Figure \ref{fig:update_and_generation}). Intuitively, the update process compresses the information (similar to writing) while the generating process loads the information (similar to reading), thus having two LoRA weights could potentially make  learning easier for our model. This is similar to the intuition in T5 where they find sharing the weights of encoder and decoder leads to slightly inferior performances (See Table 2 in \citet{T5}). 
+
+\vspace{-5pt}
+\subsubsection{Retriever Design and Training}
+\vspace{-5pt}
+\paragraph{Retriever Design}
+The retriever has two projectors: query projector $f_q$ and key projector $f_k$, which are all instantiated with a two-layer perceptron. The output dimension of both projectors, denoted as $d_{proj}$, is set to be a small number. In our experiments, we set $d_{proj}$ to be $d/20$ where $d$ is the hidden size of the language model $\phi$. When dropping tokens from $\theta_l$ into $\Theta_l$ (as shown in Figure \ref{fig:update_and_generation}), we apply $f_k$ on top of the dropped memory tokens, thus we need an additional pool storing all the key vectors corresponding to the memory tokens in $\Theta_l$. Note that the key vectors are the output from $f_k$, and are of dimension $d_{proj}$, requiring little additional memory footprint compared to the long-term memory.
+During generation, given the hidden states from the query, we apply $f_q$ on the hidden states to get query vectors and use them to retrieve tokens from $\Theta_l$ according to the dot product between query vectors and key vectors. 
+
+\vspace{-10pt}
+\paragraph{Training the Retriever}
+To train the retriever, we first split a document $x$ into $n$ chunks $x_1, x_2,\cdots, x_n$ and we inject \{$x_1, \cdots, x_{n-1}$ into the short-term memory. Then we can track the embeddings in the short-term memory that are related to $x_1,\cdots,x_{n-1}$ which we denote as $\theta_+$. Then the memory tokens that are not related to $x_1, \cdots, x_{n-1}$, i.e., the tokens that were there before injecting $x_1,\cdots,x_{n-1}$, are denoted as $\theta_-$. 
+After that, we run a forward pass on $x_n$ to obtain the hidden states $h_n$ (Note that this is a general notation for all layers). For the hidden states $h_n$ in each layer, we train the retriever using the following objective:
+\begin{align*}
+    \min_{f_q, f_k} - & \log (p_+) - \log (1 - p_-), \\
+    \textrm{where } & p_+ = \langle f_q(h_n), f_k(\theta_+) \rangle, \\
+    &    p_- = \langle f_q(h_n), f_k(\theta_-) \rangle,
+\end{align*}
+i.e., we are maximizing the distance between $h_n$ and $\theta_-$ while minimizing the distance between $x_n$ and $\theta_+$ after applying $f_q$ and $f_k$ on $h_n$ and $\theta$ respectively. 
+
+\vspace{-5pt}
+\subsubsection{Training Details}
+\vspace{-5pt}
+\paragraph{Setting Configurations} 
+We build \ours on top of Llama-3.1-8B~\citep{llama3} and train it using eight A100 GPUs. 
+We tried \texttt{FSDP}, \texttt{deepspeed-stage-2}, and \texttt{deepspeed-stage-3}
+and we finally choose \texttt{deepspeed-stage-2}
+due to resource limitation and library incompatibility (see the details in Appendix \ref{sub:justifications_of_deepspeed_2}). 
+Specifically, we set $K=256$, $N=10240$ ($N$ is the number of tokens in the short-term memory, see Section \ref{sub:preliminary}), and the number of tokens of extracted LTM in Figure \ref{fig:update_and_generation} is set to 2,560. The generation window (i.e., the maximum length of generation) is set to be 2,048.
+Thus maximally we have the attention matrix of shape $(12,800 + 2,048)$ by $2,048$, 
+which is fit into eight A100 GPUs using \texttt{deepspeed-stage-2}. Although Llama-3.1-8B can practically handle a 128k context window, it went through much more extensive training that we cannot afford. Should we have more GPUs and more budget, \ours could also be scaled to 128k level. 
+Given the constraint of GPU resources, we have scaled to 12,800 memory tokens and 2,048 generation context window, relying on Llama-3.1-8B's capability on a context window of $12,800+2,048=14,848$  tokens. Thus, for fair comparisons, we mainly focus on Llama-3.1-8B-\textbf{16k} as the baseline.
+
+\vspace{-5pt}
+\subsubsection{Data Curriculum}
+\label{ssub:data_curriculum}
+\vspace{-5pt}
+The training process consists of three stages:
+
+\vspace{-10pt}
+\paragraph{Continual Training of MemoryLLM (Stage 1)}
+Different from \cite{memoryllm} which starts from the backbone model Llama-2-7B, we start with the backbone model Llama-3.1-8B, which serves as $\phi$ as shown in Figure \ref{fig:update_and_generation}. We equip $\phi$ with $N=12,800$ memory tokens in each layer and set the generation context window as 2,048. We first continually train $\phi$ equipped with $\theta$ on the dataset \texttt{fineweb-edu}~\citep{fineweb} for 1,200,000 steps over four weeks, establishing a strong foundation for handling short documents. This training stage consists of three key sub-tasks as outlined in MemoryLLM~\citep{memoryllm} (see details in Appendix \ref{sub:details_of_training_sub_tasks})).
+
+
+\vspace{-10pt}
+\paragraph{Long-Context Modeling with Long Documents (Stage 2)}
+Since most of the \texttt{fineweb-edu} dataset (used in Stage 1 training) are short documents under 4k tokens, we need to train on longer documents to enhance the model's long-context modeling abilities. Thus, we extract documents from SlimPajama that range from 4k to 64k tokens and split them into four categories based on their lengths: \texttt{4k-8k}, \texttt{8k-16k}, \texttt{16k-32k}, \texttt{32k-64k}. The statistics of obtained dataset is shown in Appendix \ref{sec:statistics_of_long_documents}. For each length range, we randomly sample 200,000 examples, and they are combined with a snapshot of \texttt{fineweb} in equal proportions (1:1:1:1:1), with each subset contributing to 20\% of the total data. We set this proportion to upsample longer documents, which is important for long context modeling as suggested by \citet{data_engineering_for_longcontext}.
+Training runs for one epoch with around one week using the same training tasks in Stage 1. 
+
+\vspace{-10pt}
+\paragraph{Training with long-term memory (Stage 3)}  
+Building on Stage 2, we introduce long-term memory to enhance \ours. Note that in Stage 1 and Stage 2, there is only the short-term memory $\theta$ where each layer $\theta_l$ has 12,800 tokens. In stage 3, we adjust the configuration by setting $\theta_l$  to 10,240 tokens and retrieving $K_0=2,560$ tokens from the long-term memory, maintaining a total of 12,800 memory tokens as in the previous stages.
+Now the structure of the memory tokens becomes slightly different, as 2,560 tokens are from the long-term memory, we design Stage 3 to ensure the model $\phi$ understand the tokens from long-term memory -- we continuously train from the checkpoint obtained after Stage 2 on a newly constructed dataset sampled from the same long documents extracted from SlimPajama but distinct from the instances used in Stage 2.
+
