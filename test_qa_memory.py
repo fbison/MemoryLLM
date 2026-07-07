@@ -189,8 +189,8 @@ def run_qa(model, tokenizer, dataset, step=1):
             filename = "./data/nq/v1.0-simplified_nq-dev-all.jsonl",
             num = opt.num_samples,
             num_unrelated_contexts=step,
-            tokenizer='llama',
-            tokenizer_path=opt.model
+            tokenizer=tokenizer,
+            tokenizer_path=None
         )
         
     elif dataset == 'squad':
@@ -199,8 +199,8 @@ def run_qa(model, tokenizer, dataset, step=1):
             filename = './data/squad/dev-v2.0.json',
             num = opt.num_samples,
             num_unrelated_contexts=step,
-            tokenizer='llama',
-            tokenizer_path=opt.model
+            tokenizer=tokenizer,
+            tokenizer_path=None
         )
 
     collate_fn_with_params = partial(collate_fn_qa, 
