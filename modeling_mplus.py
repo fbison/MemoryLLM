@@ -519,7 +519,7 @@ class LlamaAttention(nn.Module):
         if not output_attentions:
             attn_weights = None
 
-        return attn_output, attn_weights, past_key_value, retriever_weights.mean(1) if retriever_weights is not None else None
+        return attn_output, attn_weights, past_key_value, retriever_weights, None
 
 
 class LlamaFlashAttention2(LlamaAttention):
@@ -867,7 +867,7 @@ class LlamaSdpaAttention(LlamaAttention):
 
         attn_output = self.o_proj(attn_output)
 
-        return attn_output, None, past_key_value
+        return attn_output, None, past_key_value, None, None
 
 
 LLAMA_ATTENTION_CLASSES = {
