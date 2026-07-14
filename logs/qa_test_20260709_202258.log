@@ -1,0 +1,77 @@
+/home/filipebison/miniconda3/envs/memoryllm/lib/python3.10/site-packages/torch/cuda/__init__.py:61: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+  import pynvml  # type: ignore[import]
+LlamaForCausalLM has generative capabilities, as `prepare_inputs_for_generation` is explicitly overwritten. However, it doesn't directly inherit from `GenerationMixin`. From 👉v4.50👈 onwards, `PreTrainedModel` will NOT inherit from `GenerationMixin`, and this model will lose the ability to call `generate` and other related functions.
+  - If you're using `trust_remote_code=True`, you can get rid of this warning by loading the model with an auto class. See https://huggingface.co/docs/transformers/en/model_doc/auto#auto-classes
+  - If you are the owner of the model architecture code, please modify your model class such that it inherits from `GenerationMixin` (after `PreTrainedModel`, otherwise you'll get an exception).
+  - If you are not the owner of the model architecture class, please contact the model code owner to update it.
+Namespace(model='YuWangX/mplus-8b', batch_size=1, datasets=['naturalqa', 'squad'], nuc=10, max_steps=200, num_samples=10, backup_memory=False, put_memory_on_cpu=False, related_position='begin', num_tokens=256, split_model=False)
+Running naturalqa dataset with nuc 10
+Step 0:
+Exact Hit Accuracy: 0.4700
+Step 1:
+Exact Hit Accuracy: 0.4100
+Step 2:
+Exact Hit Accuracy: 0.4600
+Step 3:
+Exact Hit Accuracy: 0.3500
+Step 4:
+Exact Hit Accuracy: 0.3800
+Step 5:
+Exact Hit Accuracy: 0.3300
+Step 6:
+Exact Hit Accuracy: 0.3200
+Step 7:
+Exact Hit Accuracy: 0.2900
+Step 8:
+Exact Hit Accuracy: 0.3400
+Step 9:
+Exact Hit Accuracy: 0.3500
+Step 10:
+Exact Hit Accuracy: 0.3500
+Running squad dataset with nuc 10
+Loading MPlus model from YuWangX/mplus-8b...
+Failed loading MPlus with flash_attention_2: FlashAttention2 has been toggled on, but it cannot be used due to the following error: the package flash_attn seems to be not installed. Please refer to the documentation of https://huggingface.co/docs/transformers/perf_infer_gpu_one#flashattention-2 to install Flash Attention 2.. Trying default attention implementation...
+Memory Pool Parameters: 1.3422 B
+Loading checkpoint shards:   0%|          | 0/8 [00:00<?, ?it/s]Loading checkpoint shards:  12%|█▎        | 1/8 [00:01<00:10,  1.45s/it]Loading checkpoint shards:  25%|██▌       | 2/8 [00:03<00:11,  1.94s/it]Loading checkpoint shards:  38%|███▊      | 3/8 [00:05<00:10,  2.08s/it]Loading checkpoint shards:  50%|█████     | 4/8 [00:08<00:08,  2.20s/it]Loading checkpoint shards:  62%|██████▎   | 5/8 [00:10<00:06,  2.25s/it]Loading checkpoint shards:  75%|███████▌  | 6/8 [00:12<00:04,  2.26s/it]Loading checkpoint shards:  88%|████████▊ | 7/8 [00:15<00:02,  2.30s/it]Loading checkpoint shards: 100%|██████████| 8/8 [00:17<00:00,  2.10s/it]Loading checkpoint shards: 100%|██████████| 8/8 [00:17<00:00,  2.13s/it]
+Length of squad dataset: 10
+Loaded 10 samples for development
+huggingface/tokenizers: The current process just got forked, after parallelism has already been used. Disabling parallelism to avoid deadlocks...
+To disable this warning, you can either:
+	- Avoid using `tokenizers` before the fork if possible
+	- Explicitly set the environment variable TOKENIZERS_PARALLELISM=(true | false)
+huggingface/tokenizers: The current process just got forked, after parallelism has already been used. Disabling parallelism to avoid deadlocks...
+To disable this warning, you can either:
+	- Avoid using `tokenizers` before the fork if possible
+	- Explicitly set the environment variable TOKENIZERS_PARALLELISM=(true | false)
+huggingface/tokenizers: The current process just got forked, after parallelism has already been used. Disabling parallelism to avoid deadlocks...
+To disable this warning, you can either:
+	- Avoid using `tokenizers` before the fork if possible
+	- Explicitly set the environment variable TOKENIZERS_PARALLELISM=(true | false)
+huggingface/tokenizers: The current process just got forked, after parallelism has already been used. Disabling parallelism to avoid deadlocks...
+To disable this warning, you can either:
+	- Avoid using `tokenizers` before the fork if possible
+	- Explicitly set the environment variable TOKENIZERS_PARALLELISM=(true | false)
+  0%|          | 0/10 [00:00<?, ?it/s]We detected that you are passing `past_key_values` as a tuple and this is deprecated and will be removed in v4.43. Please use an appropriate `Cache` class (https://huggingface.co/docs/transformers/v4.41.3/en/internal/generation_utils#transformers.Cache)
+ 10%|█         | 1/10 [00:21<03:13, 21.44s/it] 20%|██        | 2/10 [00:44<02:59, 22.41s/it] 30%|███       | 3/10 [01:08<02:42, 23.28s/it] 40%|████      | 4/10 [01:33<02:21, 23.66s/it] 50%|█████     | 5/10 [01:58<02:01, 24.37s/it] 60%|██████    | 6/10 [02:23<01:37, 24.42s/it] 70%|███████   | 7/10 [02:43<01:09, 23.12s/it] 80%|████████  | 8/10 [03:05<00:45, 22.69s/it] 90%|█████████ | 9/10 [03:29<00:23, 23.05s/it]100%|██████████| 10/10 [03:54<00:00, 23.56s/it]100%|██████████| 10/10 [03:54<00:00, 23.41s/it]
+Step 0:
+Exact Hit Accuracy: 0.4000
+Step 1:
+Exact Hit Accuracy: 0.3000
+Step 2:
+Exact Hit Accuracy: 0.5000
+Step 3:
+Exact Hit Accuracy: 0.5000
+Step 4:
+Exact Hit Accuracy: 0.4000
+Step 5:
+Exact Hit Accuracy: 0.4000
+Step 6:
+Exact Hit Accuracy: 0.4000
+Step 7:
+Exact Hit Accuracy: 0.5000
+Step 8:
+Exact Hit Accuracy: 0.3000
+Step 9:
+Exact Hit Accuracy: 0.4000
+Step 10:
+Exact Hit Accuracy: 0.6000
