@@ -182,7 +182,7 @@ def load_data(filepath):
     data = [json.loads(line) for line in lines]
     return pd.DataFrame(data)
 
-def run_qa(model, tokenizer, dataset, step=1):
+def run_qa(model, tokenizer, dataset, step=1, output_filename=None):
 
     if dataset == 'naturalqa':
         dataset = NQDataset(
@@ -315,6 +315,19 @@ def run_qa(model, tokenizer, dataset, step=1):
             questions.append(sentence_ids.detach().cpu().numpy()[0])
             targets.append(answer_ids.detach().cpu().numpy()[0])
 
+            if output_filename is not None:
+                dec_targets = tokenizer.batch_decode(targets)
+                dec_middle_outputs = {
+                    key: tokenizer.batch_decode(value)
+                    for key, value in middle_outputs.items()
+                }
+                dec_questions = tokenizer.batch_decode(questions) if len(questions) > 0 else []
+                dec_contexts_middle = {
+                    key: tokenizer.batch_decode(value)
+                    for key, value in contexts_middle.items()
+                }
+                save_formatted_json(output_filename, opt, dec_targets, dec_middle_outputs, dec_contexts_middle, dec_questions)
+
     targets = tokenizer.batch_decode(targets)
     middle_outputs = {
         key: tokenizer.batch_decode(value)
@@ -331,16 +344,60 @@ def run_qa(model, tokenizer, dataset, step=1):
 
     return middle_outputs, targets, contexts_middle, questions
 
-
 def calculate_exact_hit_accuracy(predictions, targets):
-
     count = 0
     hit = 0
     for i in range(len(predictions)):
         if targets[i].replace("</s>", "").strip() in predictions[i]:
             hit += 1
         count += 1
-    return hit/count
+    return hit / count if count > 0 else 0.0
+
+def save_formatted_json(filename, opt, targets, middle_outputs, contexts_middle, questions):
+    metrics = {}
+    if len(targets) > 0:
+        if 'step_0' in middle_outputs and len(middle_outputs['step_0']) == len(targets):
+            metrics['step_0'] = round(calculate_exact_hit_accuracy(middle_outputs['step_0'], targets), 4)
+        if opt.related_position == 'begin':
+            for idx in range(opt.nuc):
+                step_key = f"step_{idx+1}"
+                if step_key in middle_outputs and len(middle_outputs[step_key]) == len(targets):
+                    metrics[step_key] = round(calculate_exact_hit_accuracy(middle_outputs[step_key], targets), 4)
+
+    generated_results = {
+        'param': {
+            'model': opt.model,
+            'max_steps': opt.max_steps,
+            'num_unrelated_contexts': opt.nuc,
+            'test_samples': len(targets)
+        },
+        'metrics': metrics
+    }
+
+    for i in range(len(targets)):
+        generated_results[str(i)] = {
+            'w/ context': middle_outputs['step_0'][i],
+            'target': targets[i],
+            'context': contexts_middle['step_0'][i] if len(contexts_middle['step_0']) > 0 else None,
+            'question': questions[i] if len(questions) > 0 else None,
+        }
+        
+        if opt.related_position != 'end':
+            for key in contexts_middle.keys():
+                if key == 'step_0': continue
+                generated_results[str(i)].update({
+                    f"contexts_{key}": contexts_middle[key][i]
+                })
+
+        if opt.related_position == 'begin':
+            for key in middle_outputs.keys():
+                if key == 'step_0': continue
+                generated_results[str(i)].update({
+                    f"prediction_{key}": middle_outputs[key][i]
+                })
+
+    with open(filename, "w") as file:
+        json.dump(generated_results, file, indent=4)
 
 def load_model_and_tokenizer(model_path, split_model=False):
     tokenizer = AutoTokenizer.from_pretrained(model_path)
@@ -408,7 +465,7 @@ if __name__ == "__main__":
                     if model is None or tokenizer is None:
                         model, tokenizer = load_model_and_tokenizer(opt.model, opt.split_model)
 
-                    middle_outputs, targets, contexts_middle, questions = run_qa(model, tokenizer, dataset, step=opt.nuc)
+                    middle_outputs, targets, contexts_middle, questions = run_qa(model, tokenizer, dataset, step=opt.nuc, output_filename=filename)
 
                     generated_results = {
                         'param': {
@@ -446,7 +503,7 @@ if __name__ == "__main__":
                                 })
 
                     with open(filename, "w") as file:
-                        json.dump(generated_results, file)
+                        json.dump(generated_results, file, indent=4)
                     file.close()
                 
                 print("Step 0:")
@@ -489,7 +546,7 @@ if __name__ == "__main__":
                     if model is None or tokenizer is None:
                         model, tokenizer = load_model_and_tokenizer(opt.model, opt.split_model)
 
-                middle_outputs, targets, contexts_middle, questions = run_qa(model, tokenizer, dataset, step=opt.nuc)
+                middle_outputs, targets, contexts_middle, questions = run_qa(model, tokenizer, dataset, step=opt.nuc, output_filename=filename)
 
                 generated_results = {
                     'param': {
@@ -527,18 +584,19 @@ if __name__ == "__main__":
                             })
 
                 with open(filename, "w") as file:
-                    json.dump(generated_results, file)
+                    json.dump(generated_results, file, indent=4)
                 file.close()
             
             print("Step 0:")
-            acc = calculate_exact_hit_accuracy([x['w/ context'] for x in list(generated_results.values())[1:]],
-                                            [x['target'] for x in list(generated_results.values())[1:]])
+            samples = [val for key, val in generated_results.items() if key.isdigit()]
+            acc = calculate_exact_hit_accuracy([x['w/ context'] for x in samples],
+                                            [x['target'] for x in samples])
             print(f"Exact Hit Accuracy: {acc:.4f}")
 
             if opt.related_position == 'begin':
                 for idx in range(opt.nuc):
                     print(f"Step {idx+1}:")
-                    acc = calculate_exact_hit_accuracy([x[f'prediction_step_{idx+1}'] for x in list(generated_results.values())[1:]],
-                                                    [x['target'] for x in list(generated_results.values())[1:]])
+                    acc = calculate_exact_hit_accuracy([x[f'prediction_step_{idx+1}'] for x in samples],
+                                                    [x['target'] for x in samples])
                     print(f"Exact Hit Accuracy: {acc:.4f}")
 
