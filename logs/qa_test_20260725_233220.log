@@ -1,0 +1,49 @@
+/home/filipebison/miniconda3/envs/memoryllm/lib/python3.10/site-packages/torch/cuda/__init__.py:61: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+  import pynvml  # type: ignore[import]
+Namespace(model='YuWangX/mplus-8b', batch_size=1, datasets=['naturalqa', 'squad'], nuc=10, max_steps=200, num_samples=100, backup_memory=False, put_memory_on_cpu=False, related_position='begin', num_tokens=256, split_model=False)
+Running naturalqa dataset with nuc 10
+Step 0:
+Exact Hit Accuracy: 0.4700
+Step 1:
+Exact Hit Accuracy: 0.4100
+Step 2:
+Exact Hit Accuracy: 0.4600
+Step 3:
+Exact Hit Accuracy: 0.3500
+Step 4:
+Exact Hit Accuracy: 0.3800
+Step 5:
+Exact Hit Accuracy: 0.3300
+Step 6:
+Exact Hit Accuracy: 0.3200
+Step 7:
+Exact Hit Accuracy: 0.2900
+Step 8:
+Exact Hit Accuracy: 0.3400
+Step 9:
+Exact Hit Accuracy: 0.3500
+Step 10:
+Exact Hit Accuracy: 0.3500
+Running squad dataset with nuc 10
+Step 0:
+Exact Hit Accuracy: 0.4000
+Step 1:
+Exact Hit Accuracy: 0.3000
+Step 2:
+Exact Hit Accuracy: 0.5000
+Step 3:
+Exact Hit Accuracy: 0.5000
+Step 4:
+Exact Hit Accuracy: 0.4000
+Step 5:
+Exact Hit Accuracy: 0.4000
+Step 6:
+Exact Hit Accuracy: 0.4000
+Step 7:
+Exact Hit Accuracy: 0.5000
+Step 8:
+Exact Hit Accuracy: 0.3000
+Step 9:
+Exact Hit Accuracy: 0.4000
+Step 10:
+Exact Hit Accuracy: 0.6000
