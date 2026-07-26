@@ -455,13 +455,21 @@ if __name__ == "__main__":
                     os.makedirs(f"results/{dataset}", exist_ok=True)
                 if not os.path.exists(f"results/{dataset}/{os.path.basename(opt.model)}"):
                     os.makedirs(f"results/{dataset}/{os.path.basename(opt.model)}", exist_ok=True)
-                filename = f"results/{dataset}/{os.path.basename(opt.model)}/results_nuc_{opt.nuc}{'_backup' if opt.backup_memory else ''}_{opt.related_position}.json"
-                # filename = f"results/results_{dataset}_{os.path.basename(opt.model)}_nuc_{opt.nuc}{'_backup' if opt.backup_memory else ''}_{opt.related_position}.json"
+                filename = f"results/{dataset}/{os.path.basename(opt.model)}/results_samples_{opt.num_samples}_nuc_{opt.nuc}{'_backup' if opt.backup_memory else ''}_{opt.related_position}.json"
 
+                is_cached = False
                 if os.path.exists(filename):
-                    generated_results = json.load(open(filename, 'r'))
-                    
-                else:
+                    try:
+                        cached_data = json.load(open(filename, 'r'))
+                        if cached_data.get('param', {}).get('test_samples', 0) >= opt.num_samples:
+                            generated_results = cached_data
+                            is_cached = True
+                        else:
+                            print(f"Cached file {filename} has {cached_data.get('param', {}).get('test_samples', 0)} samples, which is fewer than requested {opt.num_samples}. Re-running evaluation...")
+                    except Exception:
+                        pass
+
+                if not is_cached:
                     if model is None or tokenizer is None:
                         model, tokenizer = load_model_and_tokenizer(opt.model, opt.split_model)
 
@@ -529,14 +537,21 @@ if __name__ == "__main__":
                 os.makedirs(f"results/{dataset}", exist_ok=True)
             if not os.path.exists(f"results/{dataset}/{os.path.basename(opt.model)}"):
                 os.makedirs(f"results/{dataset}/{os.path.basename(opt.model)}", exist_ok=True)
-            filename = f"results/{dataset}/{os.path.basename(opt.model)}/results_nuc_{opt.nuc}{'_backup' if opt.backup_memory else ''}_{opt.related_position}.json"
+            filename = f"results/{dataset}/{os.path.basename(opt.model)}/results_samples_{opt.num_samples}_nuc_{opt.nuc}{'_backup' if opt.backup_memory else ''}_{opt.related_position}.json"
 
-            # filename = f"results/results_{dataset}_{os.path.basename(opt.model)}_nuc_{opt.nuc}{'_backup' if opt.backup_memory else ''}_{opt.related_position}.json"
-
+            is_cached = False
             if os.path.exists(filename):
-                generated_results = json.load(open(filename, 'r'))
+                try:
+                    cached_data = json.load(open(filename, 'r'))
+                    if cached_data.get('param', {}).get('test_samples', 0) >= opt.num_samples:
+                        generated_results = cached_data
+                        is_cached = True
+                    else:
+                        print(f"Cached file {filename} has {cached_data.get('param', {}).get('test_samples', 0)} samples, which is fewer than requested {opt.num_samples}. Re-running evaluation...")
+                except Exception:
+                    pass
 
-            else:
+            if not is_cached:
                 if opt.model is None:
                     model = None
                     tokenizer = None
