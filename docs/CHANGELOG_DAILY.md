@@ -33,19 +33,14 @@ Complete the full 100-sample benchmark evaluation for SQuAD, synthesize complete
 ### 🚀 Deliverables & Actions
 * **Complete Output Data:** Preserved complete 100-sample result files for [SQuAD](file:///C:/usp/MemoryLLM/results/squad/mplus-8b/results_samples_100_nuc_10_begin.json) and [NaturalQA](file:///C:/usp/MemoryLLM/results/naturalqa/mplus-8b/results_samples_100_nuc_10_begin.json).
 * **Documented Delta:** Added numerical delta tracking table to daily logs for ongoing benchmark comparison.
+* **Upstream Branch Integrity Verification:** Conducted a comprehensive line-by-line git diff between `upstream/main` and `upstream/mplus`. Confirmed that the upstream `mplus` branch is solely dedicated to pre-training code (`train/` directory). Root-level model definitions (`modeling_mplus.py`), benchmark evaluation scripts (`test_qa_memory.py`), and tokenizer logic are 100% identical between branches. Running evaluation benchmarks on our current branch (`main`) is fully valid and evaluates the genuine `YuWangX/mplus-8b` model.
 
 ## Possible reasons to the delta
 
-  #### B. Open Hypotheses (Potential Causes Requiring Future Testing)                                                                                                                  
-                                                                                                                                                                                       
-  There are several plausible hypotheses for this ~28%–37% performance delta that would require isolated experiments to verify:                                                        
-                                                                                                                                                                                       
-  1. Attention Kernel & Scaling Differences: FlashAttention-2 kernels compute attention differently than PyTorch's native scaled_dot_product_attention (SDPA). In modeling_mplus.py,   
-  SDPA returns None for selector retriever weights, whereas FlashAttention-2 computes custom kernel paths.                                                                             
-  2. String Normalization & Decoding: Differences in text post-processing, whitespace stripping, lowercasing, or EOS token handling between calculate_exact_hit_accuracy and the       
-  authors' internal evaluation scripts.                                                                                                                                                
-  3. Sample Subset Differences: The paper describes filtering out ambiguous examples that gpt-4o-mini failed to answer before taking the first 100 samples. The pre-filtered indices   
-  (indices_squad_3.npy / indices_nq_4.npy) might represent a slightly different subset than the paper's final 100 samples.   <--- PROBABLY THIS ONE
+  There are several plausible hypotheses for this ~28%–37% performance delta that would require isolated experiments to verify:
+  1. Attention Kernel & Scaling Differences: FlashAttention-2 kernels compute attention differently than PyTorch's native scaled_dot_product_attention (SDPA). In modeling_mplus.py, SDPA returns None for selector retriever weights, whereas FlashAttention-2 computes custom kernel paths. 
+  2. String Normalization & Decoding: Differences in text post-processing, whitespace stripping, lowercasing, or EOS token handling between calculate_exact_hit_accuracy and the authors' internal evaluation scripts.
+  3. Sample Subset Differences: The paper describes filtering out ambiguous examples that gpt-4o-mini failed to answer before taking the first 100 samples. The pre-filtered indices (indices_squad_3.npy / indices_nq_4.npy) might represent a slightly different subset than the paper's final 100 samples.   <--- PROBABLY THIS ONE
 ---
 
 ## 📅 August 9, 2026 — 100-Sample Benchmark Evaluation & Interruption Analysis
@@ -53,6 +48,9 @@ Complete the full 100-sample benchmark evaluation for SQuAD, synthesize complete
 ### 🎯 Objective
 Evaluate the M+ model (`YuWangX/mplus-8b`) on the full 100-sample benchmark for NaturalQA and SQuAD, measure execution timing, and analyze performance retention curves.
 
+'''
+python test_qa_memory.py --model YuWangX/mplus-8b --datasets squad --num_samples 100 --nuc 10 2>&1 | tee logs/squad_test_$(date +%Y%m%d_%H%M%S).log
+'''
 ### 💡 Key Discoveries
 * **NaturalQA Benchmark Completion:** NaturalQA successfully evaluated all 100 samples across 10 distractor steps in **43 minutes and 05 seconds** (~25.8 seconds per question).
   * **Initial Recall (Step 0):** **47.00%**
