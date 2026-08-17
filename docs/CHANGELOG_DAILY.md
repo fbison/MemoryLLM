@@ -4,18 +4,31 @@ A high-level, goal-oriented summary of work completed, key discoveries, and prog
 
 ---
 
-## 📅 August 17, 2026 — Master Test Reproduction Matrix & Paper Benchmark Taxonomy
+## 📅 August 17, 2026 — Master Test Matrix & 160k Knowledge Retention Evaluation Plan
 
 ### 🎯 Objective
-Catalog every experiment, ablation study, and efficiency benchmark in the M+ paper (*arXiv:2502.00592v2*), verify sample filtering alignment (including GPT-4o-mini answerability subsets) for executed runs, and map paper assets to repo execution scripts.
+Catalog all 13 benchmarks and ablations from the M+ paper (*arXiv:2502.00592v2*), resolve the distractor horizon difference between short 10-step runs (~5k tokens) and the paper's full 160k-token curve, adapt `test_qa_memory.py` with an evaluation interval parameter (`--eval_interval`), and plan the full 160k execution on NaturalQA and SQuAD for the lab server.
 
 ### 💡 Key Discoveries
-* **Filter Alignment Verification:** Confirmed that the executed SQuAD and NaturalQA runs strictly used the author-provided pre-filtered indices (`indices_squad_3.npy` and `indices_nq_4.npy` from `YuWangX/KnowledgeRetention`), which inherently enforce both the short-answer length cutoff ($\le 3-4$ tokens) and the GPT-4o-mini answerability filter described in Section 5.3.
-* **Paper Benchmark Coverage:** Mapped all 13 paper experiments across 4 readiness tiers (Executed, Actionable, Ablations, External Datasets).
+* **Distractor Horizon Resolution:** In the paper (Figures 3 & 4), distractors scale up to **160,000 tokens** (~320 chunks of 512 tokens evaluated at 10k token increments). Our previous `--nuc 10` run evaluated only the initial segment (~5k tokens).
+* **Generation Optimization via `--eval_interval`:** Generating 10 tokens at every single chunk ($1 \dots 320$) would require 321 generations per question (~2.5 hours per dataset). Adding `--eval_interval 20` enables evaluating specifically at 10k token increments ($0\text{k}, 10\text{k}, 20\text{k}, \dots, 160\text{k}$), reducing compute to 17 generations per question (~30 minutes per dataset / ~1 hour total).
 
 ### 🚀 Deliverables & Actions
-* **Created Master Matrix:** Added [docs/TEST_REPRODUCTION_MATRIX.md](TEST_REPRODUCTION_MATRIX.md) containing the full cross-referenced comparison table linking paper figures, tables, code scripts, and execution statuses.
-* **Updated Documentation Sitemap:** Indexed the new matrix in [docs/README.md](README.md).
+* **Code Adaptation (`test_qa_memory.py`):** Added `--eval_interval` (default `1`, with support for step intervals such as `20` for 10k tokens). Adapted `run_qa`, `save_formatted_json`, and reporting to handle interval-based generation safely without index or formatting errors.
+* **Master Reproduction Matrix:** Created [docs/TEST_REPRODUCTION_MATRIX.md](TEST_REPRODUCTION_MATRIX.md) and indexed it in [docs/README.md](README.md).
+* **Execution Plan & Command for Remote Lab Computer:**
+  ```bash
+  tmux new -s eval_160k
+  conda activate memoryllm
+  python test_qa_memory.py \
+    --model YuWangX/mplus-8b \
+    --datasets squad naturalqa \
+    --num_samples 100 \
+    --nuc 320 \
+    --eval_interval 20 \
+    2>&1 | tee logs/eval_160k_$(date +%Y%m%d_%H%M%S).log
+  ```
+
 
 ---
 

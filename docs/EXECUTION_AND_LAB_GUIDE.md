@@ -12,7 +12,10 @@ To reproduce the Knowledge Retention QA benchmark for M+ (`YuWangX/mplus-8b`) on
 # 1. Activate environment
 conda activate memoryllm
 
-# 2. Run full evaluation (100 samples per dataset, nuc=10)
+### Quickstart Commands
+
+#### A. Standard Short-Horizon Evaluation (`nuc=10` $\approx$ 5k tokens)
+```bash
 python test_qa_memory.py \
   --model YuWangX/mplus-8b \
   --datasets naturalqa squad \
@@ -21,11 +24,23 @@ python test_qa_memory.py \
   2>&1 | tee logs/qa_test_$(date +%Y%m%d_%H%M%S).log
 ```
 
+#### B. Full 160k-Token Retention Curve (Matching Paper Figures 3 & 4: 0k to 160k at 10k intervals)
+```bash
+python test_qa_memory.py \
+  --model YuWangX/mplus-8b \
+  --datasets squad naturalqa \
+  --num_samples 100 \
+  --nuc 320 \
+  --eval_interval 20 \
+  2>&1 | tee logs/eval_160k_$(date +%Y%m%d_%H%M%S).log
+```
+
 ### Command Parameters
 * `--model`: Model path or Hugging Face hub ID (`YuWangX/mplus-8b`).
 * `--datasets`: Target datasets (`naturalqa`, `squad`).
 * `--num_samples`: Number of test evaluation samples (default: `100` to match paper benchmark).
-* `--nuc`: Number of Unrelated Contexts / distractor context steps inserted into long-term memory (default: `10`).
+* `--nuc`: Number of Unrelated Contexts / distractor context chunks inserted into long-term memory (`nuc=320` $\approx$ 160,000 tokens).
+* `--eval_interval`: Evaluation interval for text generation (e.g. `20` = evaluate every 20 chunks $\approx$ 10k tokens).
 * `--related_position`: Position of the target context in the memory sequence (`begin`, `end`, or `random`; default: `begin`).
 
 ---

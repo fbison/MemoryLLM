@@ -172,6 +172,12 @@ def get_parser():
         default=False,
         action='store_true'
     )
+    parser.add_argument(
+        "--eval_interval",
+        type=int,
+        default=1,
+        help="Evaluation step interval for generation (default: 1, evaluate all steps. For 10k token increments up to 160k with nuc=320, use --eval_interval 20)"
+    )
 
     return parser
 
@@ -286,15 +292,15 @@ def run_qa(model, tokenizer, dataset, step=1, output_filename=None):
                 )
 
                 if opt.related_position == 'begin':
+                    if idx == 0 or idx % opt.eval_interval == 0:
+                        output = model.generate(
+                            inputs=sentence_ids, 
+                            attention_mask=sentence_attention_mask,
+                            max_new_tokens=10,
+                            pad_token_id=tokenizer.pad_token_id
+                        )[:, len(sentence_ids[0]):][0].detach().cpu()
 
-                    output = model.generate(
-                        inputs=sentence_ids, 
-                        attention_mask=sentence_attention_mask,
-                        max_new_tokens=10,
-                        pad_token_id=tokenizer.pad_token_id
-                    )[:, len(sentence_ids[0]):][0].detach().cpu()
-
-                    middle_outputs[f"step_{idx}"].append(output)
+                        middle_outputs[f"step_{idx}"].append(output)
                 
                 contexts_middle[f"step_{idx}"].append(ids[0].detach().cpu())
 
@@ -359,16 +365,17 @@ def save_formatted_json(filename, opt, targets, middle_outputs, contexts_middle,
         if 'step_0' in middle_outputs and len(middle_outputs['step_0']) == len(targets):
             metrics['step_0'] = round(calculate_exact_hit_accuracy(middle_outputs['step_0'], targets), 4)
         if opt.related_position == 'begin':
-            for idx in range(opt.nuc):
-                step_key = f"step_{idx+1}"
-                if step_key in middle_outputs and len(middle_outputs[step_key]) == len(targets):
-                    metrics[step_key] = round(calculate_exact_hit_accuracy(middle_outputs[step_key], targets), 4)
+            for step_key, outputs_list in middle_outputs.items():
+                if step_key == 'step_0': continue
+                if len(outputs_list) == len(targets) and len(targets) > 0:
+                    metrics[step_key] = round(calculate_exact_hit_accuracy(outputs_list, targets), 4)
 
     generated_results = {
         'param': {
             'model': opt.model,
             'max_steps': opt.max_steps,
             'num_unrelated_contexts': opt.nuc,
+            'eval_interval': getattr(opt, 'eval_interval', 1),
             'test_samples': len(targets)
         },
         'metrics': metrics
@@ -392,9 +399,10 @@ def save_formatted_json(filename, opt, targets, middle_outputs, contexts_middle,
         if opt.related_position == 'begin':
             for key in middle_outputs.keys():
                 if key == 'step_0': continue
-                generated_results[str(i)].update({
-                    f"prediction_{key}": middle_outputs[key][i]
-                })
+                if len(middle_outputs[key]) > i:
+                    generated_results[str(i)].update({
+                        f"prediction_{key}": middle_outputs[key][i]
+                    })
 
     with open(filename, "w") as file:
         json.dump(generated_results, file, indent=4)
@@ -537,7 +545,8 @@ if __name__ == "__main__":
                 os.makedirs(f"results/{dataset}", exist_ok=True)
             if not os.path.exists(f"results/{dataset}/{os.path.basename(opt.model)}"):
                 os.makedirs(f"results/{dataset}/{os.path.basename(opt.model)}", exist_ok=True)
-            filename = f"results/{dataset}/{os.path.basename(opt.model)}/results_samples_{opt.num_samples}_nuc_{opt.nuc}{'_backup' if opt.backup_memory else ''}_{opt.related_position}.json"
+            interval_str = f"_interval_{opt.eval_interval}" if opt.eval_interval > 1 else ""
+            filename = f"results/{dataset}/{os.path.basename(opt.model)}/results_samples_{opt.num_samples}_nuc_{opt.nuc}{interval_str}{'_backup' if opt.backup_memory else ''}_{opt.related_position}.json"
 
             is_cached = False
             if os.path.exists(filename):
@@ -555,63 +564,31 @@ if __name__ == "__main__":
                 if opt.model is None:
                     model = None
                     tokenizer = None
-                    middle_outputs, targets, contexts_middle, questions = run_qa(model, tokenizer, dataset, step=opt.nuc)
+                    middle_outputs, targets, contexts_middle, questions = run_qa(model, tokenizer, dataset, step=opt.nuc, output_filename=filename)
                     
                 else:
                     if model is None or tokenizer is None:
                         model, tokenizer = load_model_and_tokenizer(opt.model, opt.split_model)
 
-                middle_outputs, targets, contexts_middle, questions = run_qa(model, tokenizer, dataset, step=opt.nuc, output_filename=filename)
+                    middle_outputs, targets, contexts_middle, questions = run_qa(model, tokenizer, dataset, step=opt.nuc, output_filename=filename)
 
-                generated_results = {
-                    'param': {
-                        'model': opt.model,
-                        'max_steps': opt.max_steps,
-                        'num_unrelated_contexts': opt.nuc,
-                        'test_samples': len(targets)
-                    }
-                }
-
-                for i in range(len(targets)):
-                    
-                    generated_results[str(i)] = {
-                        'w/ context': middle_outputs['step_0'][i],
-                        'target': targets[i],
-                        'context': contexts_middle['step_0'][i] if len(contexts_middle['step_0']) > 0 else None,
-                        'question': questions[i] if len(questions) > 0 else None,
-                    }
-                    
-                    if opt.related_position != 'end':
-                        for key in contexts_middle.keys():
-                            if key == 'step_0': continue
-                            generated_results[str(i)].update({
-                                f"contexts_{key}": contexts_middle[key][i]
-                            })
-
-                    if opt.related_position == 'begin':
-
-                        for key in middle_outputs.keys():
-                            
-                            if key == 'step_0': continue
-
-                            generated_results[str(i)].update({
-                                f"prediction_{key}": middle_outputs[key][i]
-                            })
-
-                with open(filename, "w") as file:
-                    json.dump(generated_results, file, indent=4)
-                file.close()
+                save_formatted_json(filename, opt, targets, middle_outputs, contexts_middle, questions)
+                generated_results = json.load(open(filename, 'r'))
             
-            print("Step 0:")
+            print("Step 0 (0k tokens - No Distractors):")
             samples = [val for key, val in generated_results.items() if key.isdigit()]
             acc = calculate_exact_hit_accuracy([x['w/ context'] for x in samples],
                                             [x['target'] for x in samples])
             print(f"Exact Hit Accuracy: {acc:.4f}")
 
-            if opt.related_position == 'begin':
-                for idx in range(opt.nuc):
-                    print(f"Step {idx+1}:")
-                    acc = calculate_exact_hit_accuracy([x[f'prediction_step_{idx+1}'] for x in samples],
-                                                    [x['target'] for x in samples])
+            if opt.related_position == 'begin' and len(samples) > 0:
+                step_keys = sorted([k for k in samples[0].keys() if k.startswith('prediction_step_')],
+                                   key=lambda x: int(x.replace('prediction_step_', '')))
+                for step_key in step_keys:
+                    step_num = int(step_key.replace('prediction_step_', ''))
+                    tokens_approx = step_num * 512 / 1000
+                    print(f"Step {step_num} (~{tokens_approx:.1f}k distractor tokens):")
+                    acc = calculate_exact_hit_accuracy([x[step_key] for x in samples if step_key in x],
+                                                    [x['target'] for x in samples if step_key in x])
                     print(f"Exact Hit Accuracy: {acc:.4f}")
 
