@@ -4,17 +4,80 @@ A high-level, goal-oriented summary of work completed, key discoveries, and prog
 
 ---
 
-## 📅 July 25, 2026 — Benchmark Execution, Metrics Storage & Lab Safety
+## 📅 August 16, 2026 — Full 100-Sample SQuAD & NaturalQA Evaluation & Delta Analysis
 
 ### 🎯 Objective
-Run the official M+ Knowledge Retention benchmarks on remote lab servers, preserve accuracy metrics directly in output files, and ensure evaluation reliability.
+Complete the full 100-sample benchmark evaluation for SQuAD, synthesize complete 100-sample results for both SQuAD and NaturalQA, document the numerical performance delta relative to paper claims (*arXiv:2502.00592v2*), and analyze potential root causes for the gap.
+
+### 📊 Benchmark Results Summary
+
+| Benchmark Metric | Local Execution (SDPA Fallback) | Paper Baseline (M+ 8B) | Measured Delta (Local vs. Paper) |
+| :--- | :---: | :---: | :---: |
+| **SQuAD Step 0** (No Distractors) | **37.00%** | **~65.00%** | **-28.00%** |
+| **SQuAD Step 10** (10 Distractors) | **28.00%** | **~62.00%** | **-34.00%** |
+| **NaturalQA Step 0** (No Distractors) | **47.00%** | **~75.00%** | **-28.00%** |
+| **NaturalQA Step 10** (10 Distractors) | **33.00%** | **~70.00%** | **-37.00%** |
 
 ### 💡 Key Discoveries
-* **Answer Length Design:** Verified that benchmark ground-truth answers are intentionally short ($\le 3–4$ tokens). The 10-token generation limit (`max_new_tokens=10`) is designed to capture these short factual answers efficiently without wasting compute time.
-* **Benchmark Scale:** Confirmed that reproducing the paper's exact accuracy curves requires evaluating **100 samples** (`--num_samples 100`) to eliminate variance.
-* **Metrics Persistence:** Identified that standard result JSONs only stored raw prediction text, forcing accuracy to be read from console logs.
+1. **Memory Retention Behavior Confirmed:** On both datasets, accuracy remains relatively stable across 10 inserted distractor contexts (~4,000 tokens of distraction). NaturalQA stays between 31%–47%, and SQuAD stays between 28%–40%. This confirms M+'s design goal of retaining long-term memory across distractor noise without catastrophic loss.
+2. **Execution Timing:** 
+   * SQuAD 100 samples completed in **42 minutes 54 seconds** (~25.7s/sample).
+   * NaturalQA 100 samples completed in **43 minutes 05 seconds** (~25.8s/sample).
+3. **Performance Delta Analysis (Open Research Hypotheses):**
+   * **Empirical Observation:** The local environment achieves ~37% (SQuAD) and ~47% (NaturalQA) initial recall, representing a ~28%–37% gap compared to paper plots.
+   * **Open Hypotheses for the Gap:**
+     1. *Attention Backend & Precision Differences:* Local runs use PyTorch's native SDPA fallback (`LlamaSdpaAttention`), whereas the paper used `FlashAttention-2` CUDA C++ kernels.
+     2. *Prompt Formatting & Normalization:* Differences in exact match string normalization (e.g. whitespace handling, BOS/EOS token decoding).
+     3. *Sample Selection:* Discrepancy between the paper's GPT-4o-mini filtered 100-sample subset and `indices_squad_3.npy` / `indices_nq_4.npy`.
 
 ### 🚀 Deliverables & Actions
+* **Complete Output Data:** Preserved complete 100-sample result files for [SQuAD](file:///C:/usp/MemoryLLM/results/squad/mplus-8b/results_samples_100_nuc_10_begin.json) and [NaturalQA](file:///C:/usp/MemoryLLM/results/naturalqa/mplus-8b/results_samples_100_nuc_10_begin.json).
+* **Documented Delta:** Added numerical delta tracking table to daily logs for ongoing benchmark comparison.
+
+## Possible reasons to the delta
+
+  #### B. Open Hypotheses (Potential Causes Requiring Future Testing)                                                                                                                  
+                                                                                                                                                                                       
+  There are several plausible hypotheses for this ~28%–37% performance delta that would require isolated experiments to verify:                                                        
+                                                                                                                                                                                       
+  1. Attention Kernel & Scaling Differences: FlashAttention-2 kernels compute attention differently than PyTorch's native scaled_dot_product_attention (SDPA). In modeling_mplus.py,   
+  SDPA returns None for selector retriever weights, whereas FlashAttention-2 computes custom kernel paths.                                                                             
+  2. String Normalization & Decoding: Differences in text post-processing, whitespace stripping, lowercasing, or EOS token handling between calculate_exact_hit_accuracy and the       
+  authors' internal evaluation scripts.                                                                                                                                                
+  3. Sample Subset Differences: The paper describes filtering out ambiguous examples that gpt-4o-mini failed to answer before taking the first 100 samples. The pre-filtered indices   
+  (indices_squad_3.npy / indices_nq_4.npy) might represent a slightly different subset than the paper's final 100 samples.   <--- PROBABLY THIS ONE
+---
+
+## 📅 August 9, 2026 — 100-Sample Benchmark Evaluation & Interruption Analysis
+
+### 🎯 Objective
+Evaluate the M+ model (`YuWangX/mplus-8b`) on the full 100-sample benchmark for NaturalQA and SQuAD, measure execution timing, and analyze performance retention curves.
+
+### 💡 Key Discoveries
+* **NaturalQA Benchmark Completion:** NaturalQA successfully evaluated all 100 samples across 10 distractor steps in **43 minutes and 05 seconds** (~25.8 seconds per question).
+  * **Initial Recall (Step 0):** **47.00%**
+  * **Retention under Distractors (Step 10):** **33.00%** (stabilized around ~33%–36% from Step 5 to Step 10).
+* **SQuAD Interruption Cause:** SQuAD evaluation stopped at sample 3 (`test_samples: 3`) because the process was prematurely interrupted/terminated 1 minute 15 seconds into the SQuAD loop.
+* **Incremental Saving Verification:** Verified that incremental progress saving worked as intended: samples 0 through 2 of SQuAD were safely written to `results/squad/mplus-8b/results_samples_100_nuc_10_begin.json` despite the sudden interruption.
+
+### 🚀 Deliverables & Actions
+* **Execution Time Profile:** Calculated full evaluation duration (~25.8s per sample, total estimated runtime for both 100-sample datasets: **~1 hour 26 minutes**).
+* **Variance Reduction:** Confirmed that evaluating 100 samples smoothed out the noisy step-by-step variance observed in 10-sample runs.
+
+---
+
+## 📅 July 25, 2026 — Benchmark Execution, Metrics Storage & Caching Fix
+
+### 🎯 Objective
+Run the official M+ Knowledge Retention benchmarks on remote lab servers, preserve accuracy metrics directly in output files, fix cached file evaluation bypasses, and ensure evaluation reliability.
+
+### 💡 Key Discoveries
+* **Evaluation Caching Bypass:** Identified why running `--num_samples 100` finished instantly and only output 10 samples: `test_qa_memory.py` previously checked `if os.path.exists(filename)` without checking sample counts or including `num_samples` in the filename. Because a 10-sample JSON file already existed from an earlier test run, the script skipped evaluation completely and re-read the 10-sample file.
+* **Answer Length Design:** Verified that benchmark ground-truth answers are intentionally short ($\le 3–4$ tokens). The 10-token generation limit (`max_new_tokens=10`) is designed to capture these short factual answers efficiently without wasting compute time.
+* **Benchmark Scale:** Confirmed that reproducing the paper's exact accuracy curves requires evaluating **100 samples** (`--num_samples 100`) to eliminate variance.
+
+### 🚀 Deliverables & Actions
+* **Sample Count in Filename & Smart Caching:** Updated `test_qa_memory.py` to save files with sample counts (e.g., `results_samples_100_nuc_10_begin.json`) and verify that cached files contain at least `opt.num_samples` before skipping evaluation.
 * **Embedded Accuracy Metrics:** Updated `test_qa_memory.py` so that step-by-step Exact Hit Accuracies are automatically calculated and stored inside the `"metrics"` header of each JSON result file.
 * **Incremental Saving & Formatting:** Updated `test_qa_memory.py` to format output JSONs with `indent=4` and **save progress after every single question**. Interruptions will no longer lose finished work.
 * **SSH & `tmux` Workflow:** Configured a persistent `tmux` session protocol so long evaluation runs continue executing on the lab server even if SSH connections drop or laptops sleep.
