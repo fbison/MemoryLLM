@@ -4,6 +4,21 @@ A high-level, goal-oriented summary of work completed, key discoveries, and prog
 
 ---
 
+## 📅 August 17, 2026 — Master Test Reproduction Matrix & Paper Benchmark Taxonomy
+
+### 🎯 Objective
+Catalog every experiment, ablation study, and efficiency benchmark in the M+ paper (*arXiv:2502.00592v2*), verify sample filtering alignment (including GPT-4o-mini answerability subsets) for executed runs, and map paper assets to repo execution scripts.
+
+### 💡 Key Discoveries
+* **Filter Alignment Verification:** Confirmed that the executed SQuAD and NaturalQA runs strictly used the author-provided pre-filtered indices (`indices_squad_3.npy` and `indices_nq_4.npy` from `YuWangX/KnowledgeRetention`), which inherently enforce both the short-answer length cutoff ($\le 3-4$ tokens) and the GPT-4o-mini answerability filter described in Section 5.3.
+* **Paper Benchmark Coverage:** Mapped all 13 paper experiments across 4 readiness tiers (Executed, Actionable, Ablations, External Datasets).
+
+### 🚀 Deliverables & Actions
+* **Created Master Matrix:** Added [docs/TEST_REPRODUCTION_MATRIX.md](TEST_REPRODUCTION_MATRIX.md) containing the full cross-referenced comparison table linking paper figures, tables, code scripts, and execution statuses.
+* **Updated Documentation Sitemap:** Indexed the new matrix in [docs/README.md](README.md).
+
+---
+
 ## 📅 August 16, 2026 — Full 100-Sample SQuAD & NaturalQA Evaluation & Delta Analysis
 
 ### 🎯 Objective

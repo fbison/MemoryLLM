@@ -28,3 +28,9 @@ This directory maintains comprehensive, persistent documentation to prevent cont
    * Experimental protocol for Knowledge Retention (SQuAD & NaturalQA).
    * Answer token length filtering ($\le 3-4$ tokens) vs. generation budget (`max_new_tokens=10`).
    * Evaluation metrics (Exact Hit Accuracy) and benchmark sample sizes ($N=100$).
+
+5. **[Paper Benchmark & Test Reproduction Matrix](TEST_REPRODUCTION_MATRIX.md)**
+   * Inventory of all 13 paper experiments, figures, tables, and execution statuses.
+   * Verification of GPT-4o-mini answerability filter and subset indices.
+   * Direct script mapping and readiness for remaining tests (LongBench, VRAM, Perplexity, LongBook).
+
