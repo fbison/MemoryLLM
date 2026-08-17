@@ -1,0 +1,86 @@
+/home/filipebison/miniconda3/envs/memoryllm/lib/python3.10/site-packages/torch/cuda/__init__.py:61: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+  import pynvml  # type: ignore[import]
+LlamaForCausalLM has generative capabilities, as `prepare_inputs_for_generation` is explicitly overwritten. However, it doesn't directly inherit from `GenerationMixin`. From 👉v4.50👈 onwards, `PreTrainedModel` will NOT inherit from `GenerationMixin`, and this model will lose the ability to call `generate` and other related functions.
+  - If you're using `trust_remote_code=True`, you can get rid of this warning by loading the model with an auto class. See https://huggingface.co/docs/transformers/en/model_doc/auto#auto-classes
+  - If you are the owner of the model architecture code, please modify your model class such that it inherits from `GenerationMixin` (after `PreTrainedModel`, otherwise you'll get an exception).
+  - If you are not the owner of the model architecture class, please contact the model code owner to update it.
+Namespace(model='YuWangX/mplus-8b', batch_size=1, datasets=['squad', 'naturalqa'], nuc=320, max_steps=200, num_samples=100, backup_memory=False, put_memory_on_cpu=False, related_position='begin', num_tokens=256, split_model=False, eval_interval=20)
+Running squad dataset with nuc 320
+Loading MPlus model from YuWangX/mplus-8b...
+Failed loading MPlus with flash_attention_2: FlashAttention2 has been toggled on, but it cannot be used due to the following error: the package flash_attn seems to be not installed. Please refer to the documentation of https://huggingface.co/docs/transformers/perf_infer_gpu_one#flashattention-2 to install Flash Attention 2.. Trying default attention implementation...
+Memory Pool Parameters: 1.3422 B
+Loading checkpoint shards:   0%|          | 0/8 [00:00<?, ?it/s]Loading checkpoint shards:  12%|█▎        | 1/8 [00:01<00:12,  1.79s/it]Loading checkpoint shards:  25%|██▌       | 2/8 [00:04<00:14,  2.35s/it]Loading checkpoint shards:  38%|███▊      | 3/8 [00:07<00:12,  2.45s/it]Loading checkpoint shards:  50%|█████     | 4/8 [00:09<00:09,  2.47s/it]Loading checkpoint shards:  62%|██████▎   | 5/8 [00:12<00:07,  2.54s/it]Loading checkpoint shards:  75%|███████▌  | 6/8 [00:14<00:05,  2.52s/it]Loading checkpoint shards:  88%|████████▊ | 7/8 [00:16<00:02,  2.28s/it]Loading checkpoint shards: 100%|██████████| 8/8 [00:17<00:00,  1.77s/it]Loading checkpoint shards: 100%|██████████| 8/8 [00:17<00:00,  2.15s/it]
+Length of squad dataset: 100
+Loaded 100 samples for development
+huggingface/tokenizers: The current process just got forked, after parallelism has already been used. Disabling parallelism to avoid deadlocks...
+To disable this warning, you can either:
+	- Avoid using `tokenizers` before the fork if possible
+	- Explicitly set the environment variable TOKENIZERS_PARALLELISM=(true | false)
+huggingface/tokenizers: The current process just got forked, after parallelism has already been used. Disabling parallelism to avoid deadlocks...
+To disable this warning, you can either:
+	- Avoid using `tokenizers` before the fork if possible
+	- Explicitly set the environment variable TOKENIZERS_PARALLELISM=(true | false)
+huggingface/tokenizers: The current process just got forked, after parallelism has already been used. Disabling parallelism to avoid deadlocks...
+To disable this warning, you can either:
+	- Avoid using `tokenizers` before the fork if possible
+	- Explicitly set the environment variable TOKENIZERS_PARALLELISM=(true | false)
+huggingface/tokenizers: The current process just got forked, after parallelism has already been used. Disabling parallelism to avoid deadlocks...
+To disable this warning, you can either:
+	- Avoid using `tokenizers` before the fork if possible
+	- Explicitly set the environment variable TOKENIZERS_PARALLELISM=(true | false)
+  0%|          | 0/100 [00:00<?, ?it/s]Traceback (most recent call last):
+  File "/home/filipebison/miniconda3/envs/memoryllm/lib/python3.10/multiprocessing/queues.py", line 244, in _feed
+  File "/home/filipebison/miniconda3/envs/memoryllm/lib/python3.10/multiprocessing/reduction.py", line 51, in dumps
+  File "/home/filipebison/miniconda3/envs/memoryllm/lib/python3.10/site-packages/torch/multiprocessing/reductions.py", line 619, in reduce_storage
+  File "/home/filipebison/miniconda3/envs/memoryllm/lib/python3.10/multiprocessing/reduction.py", line 198, in DupFd
+  File "/home/filipebison/miniconda3/envs/memoryllm/lib/python3.10/multiprocessing/resource_sharer.py", line 48, in __init__
+OSError: [Errno 24] Too many open files
+Traceback (most recent call last):
+  File "/home/filipebison/miniconda3/envs/memoryllm/lib/python3.10/multiprocessing/queues.py", line 244, in _feed
+  File "/home/filipebison/miniconda3/envs/memoryllm/lib/python3.10/multiprocessing/reduction.py", line 51, in dumps
+  File "/home/filipebison/miniconda3/envs/memoryllm/lib/python3.10/site-packages/torch/multiprocessing/reductions.py", line 619, in reduce_storage
+  File "/home/filipebison/miniconda3/envs/memoryllm/lib/python3.10/multiprocessing/reduction.py", line 198, in DupFd
+Traceback (most recent call last):
+  File "/home/filipebison/miniconda3/envs/memoryllm/lib/python3.10/multiprocessing/queues.py", line 244, in _feed
+  File "/home/filipebison/miniconda3/envs/memoryllm/lib/python3.10/multiprocessing/reduction.py", line 51, in dumps
+  File "/home/filipebison/miniconda3/envs/memoryllm/lib/python3.10/site-packages/torch/multiprocessing/reductions.py", line 619, in reduce_storage
+  File "/home/filipebison/miniconda3/envs/memoryllm/lib/python3.10/multiprocessing/reduction.py", line 198, in DupFd
+  File "/home/filipebison/miniconda3/envs/memoryllm/lib/python3.10/multiprocessing/resource_sharer.py", line 48, in __init__
+OSError: [Errno 24] Too many open files
+  File "/home/filipebison/miniconda3/envs/memoryllm/lib/python3.10/multiprocessing/resource_sharer.py", line 48, in __init__
+OSError: [Errno 24] Too many open files
+Traceback (most recent call last):
+  File "/home/filipebison/miniconda3/envs/memoryllm/lib/python3.10/multiprocessing/queues.py", line 244, in _feed
+  File "/home/filipebison/miniconda3/envs/memoryllm/lib/python3.10/multiprocessing/reduction.py", line 51, in dumps
+  File "/home/filipebison/miniconda3/envs/memoryllm/lib/python3.10/site-packages/torch/multiprocessing/reductions.py", line 619, in reduce_storage
+  File "/home/filipebison/miniconda3/envs/memoryllm/lib/python3.10/multiprocessing/reduction.py", line 198, in DupFd
+  File "/home/filipebison/miniconda3/envs/memoryllm/lib/python3.10/multiprocessing/resource_sharer.py", line 48, in __init__
+OSError: [Errno 24] Too many open files
+Traceback (most recent call last):
+  File "/home/filipebison/miniconda3/envs/memoryllm/lib/python3.10/multiprocessing/queues.py", line 244, in _feed
+  File "/home/filipebison/miniconda3/envs/memoryllm/lib/python3.10/multiprocessing/reduction.py", line 51, in dumps
+  File "/home/filipebison/miniconda3/envs/memoryllm/lib/python3.10/site-packages/torch/multiprocessing/reductions.py", line 619, in reduce_storage
+  File "/home/filipebison/miniconda3/envs/memoryllm/lib/python3.10/multiprocessing/reduction.py", line 198, in DupFd
+  File "/home/filipebison/miniconda3/envs/memoryllm/lib/python3.10/multiprocessing/resource_sharer.py", line 48, in __init__
+OSError: [Errno 24] Too many open files
+Traceback (most recent call last):
+  File "/home/filipebison/miniconda3/envs/memoryllm/lib/python3.10/multiprocessing/queues.py", line 244, in _feed
+  File "/home/filipebison/miniconda3/envs/memoryllm/lib/python3.10/multiprocessing/reduction.py", line 51, in dumps
+  File "/home/filipebison/miniconda3/envs/memoryllm/lib/python3.10/site-packages/torch/multiprocessing/reductions.py", line 619, in reduce_storage
+  File "/home/filipebison/miniconda3/envs/memoryllm/lib/python3.10/multiprocessing/reduction.py", line 198, in DupFd
+  File "/home/filipebison/miniconda3/envs/memoryllm/lib/python3.10/multiprocessing/resource_sharer.py", line 48, in __init__
+OSError: [Errno 24] Too many open files
+Traceback (most recent call last):
+  File "/home/filipebison/miniconda3/envs/memoryllm/lib/python3.10/multiprocessing/queues.py", line 244, in _feed
+  File "/home/filipebison/miniconda3/envs/memoryllm/lib/python3.10/multiprocessing/reduction.py", line 51, in dumps
+  File "/home/filipebison/miniconda3/envs/memoryllm/lib/python3.10/site-packages/torch/multiprocessing/reductions.py", line 619, in reduce_storage
+  File "/home/filipebison/miniconda3/envs/memoryllm/lib/python3.10/multiprocessing/reduction.py", line 198, in DupFd
+  File "/home/filipebison/miniconda3/envs/memoryllm/lib/python3.10/multiprocessing/resource_sharer.py", line 48, in __init__
+OSError: [Errno 24] Too many open files
+Traceback (most recent call last):
+  File "/home/filipebison/miniconda3/envs/memoryllm/lib/python3.10/multiprocessing/queues.py", line 244, in _feed
+  File "/home/filipebison/miniconda3/envs/memoryllm/lib/python3.10/multiprocessing/reduction.py", line 51, in dumps
+  File "/home/filipebison/miniconda3/envs/memoryllm/lib/python3.10/site-packages/torch/multiprocessing/reductions.py", line 619, in reduce_storage
+  File "/home/filipebison/miniconda3/envs/memoryllm/lib/python3.10/multiprocessing/reduction.py", line 198, in DupFd
+  File "/home/filipebison/miniconda3/envs/memoryllm/lib/python3.10/multiprocessing/resource_sharer.py", line 48, in __init__
+OSError: [Errno 24] Too many open files
