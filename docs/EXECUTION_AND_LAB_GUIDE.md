@@ -123,3 +123,9 @@ Evaluating 100 samples with 10 distractor steps per sample can take considerable
 ### Issue 6: Unformatted Single-Line JSON & Risk of Lost Progress
 * **Symptom:** Output JSON results were saved as a single 260KB string without indentation, and only written at the end of the entire run.
 * **Fix:** Updated `test_qa_memory.py` to use `json.dump(..., indent=4)` for formatted multi-line JSONs, and added incremental saving after every evaluated sample.
+
+### Issue 7: Multi-Process DataLoader File Descriptor Exhaustion at High `nuc`
+* **Symptom:** `OSError: [Errno 24] Too many open files` in `torch/multiprocessing/reductions.py` when evaluating large distractor counts (`nuc=320`).
+* **Root Cause:** When `num_workers > 0`, PyTorch shares all 646 batch tensors via IPC file descriptors across worker queues, exceeding the OS default limit (`1024`).
+* **Fix:** Added `--num_workers` parameter defaulting to `0` in `test_qa_memory.py`, executing data loading in the main process and eliminating IPC file descriptor overhead.
+

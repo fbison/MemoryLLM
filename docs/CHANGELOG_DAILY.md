@@ -12,9 +12,12 @@ Catalog all 13 benchmarks and ablations from the M+ paper (*arXiv:2502.00592v2*)
 ### 💡 Key Discoveries
 * **Distractor Horizon Resolution:** In the paper (Figures 3 & 4), distractors scale up to **160,000 tokens** (~320 chunks of 512 tokens evaluated at 10k token increments). Our previous `--nuc 10` run evaluated only the initial segment (~5k tokens).
 * **Generation Optimization via `--eval_interval`:** Generating 10 tokens at every single chunk ($1 \dots 320$) would require 321 generations per question (~2.5 hours per dataset). Adding `--eval_interval 20` enables evaluating specifically at 10k token increments ($0\text{k}, 10\text{k}, 20\text{k}, \dots, 160\text{k}$), reducing compute to 17 generations per question (~30 minutes per dataset / ~1 hour total).
+* **DataLoader IPC File Descriptor Fix (`num_workers=0`):** At `nuc=320`, each batch passes 646 tensors across worker queues. Using `num_workers > 0` exhausted the OS open file descriptor limit (`Errno 24: Too many open files`). Setting `num_workers=0` executes data loading in the main process, eliminating multiprocessing IPC and file descriptor sharing completely.
 
 ### 🚀 Deliverables & Actions
-* **Code Adaptation (`test_qa_memory.py`):** Added `--eval_interval` (default `1`, with support for step intervals such as `20` for 10k tokens). Adapted `run_qa`, `save_formatted_json`, and reporting to handle interval-based generation safely without index or formatting errors.
+* **Code Adaptations (`test_qa_memory.py`):** 
+  * Added `--eval_interval` (default `1`) to support interval checkpoints.
+  * Added `--num_workers` (default `0`) in DataLoader to eliminate file descriptor exhaustion.
 * **Master Reproduction Matrix:** Created [docs/TEST_REPRODUCTION_MATRIX.md](TEST_REPRODUCTION_MATRIX.md) and indexed it in [docs/README.md](README.md).
 * **Execution Plan & Command for Remote Lab Computer:**
   ```bash

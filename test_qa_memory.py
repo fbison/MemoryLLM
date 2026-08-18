@@ -178,6 +178,12 @@ def get_parser():
         default=1,
         help="Evaluation step interval for generation (default: 1, evaluate all steps. For 10k token increments up to 160k with nuc=320, use --eval_interval 20)"
     )
+    parser.add_argument(
+        "--num_workers",
+        type=int,
+        default=0,
+        help="DataLoader worker count (default: 0 to prevent OS open file descriptor exhaustion under large distractor counts)"
+    )
 
     return parser
 
@@ -216,7 +222,7 @@ def run_qa(model, tokenizer, dataset, step=1, output_filename=None):
             add_special_tokens=False,
             end_special_token="</s>",)
 
-    dataloader = DataLoader(dataset, batch_size=1, shuffle=False, num_workers=4, collate_fn=collate_fn_with_params)
+    dataloader = DataLoader(dataset, batch_size=1, shuffle=False, num_workers=opt.num_workers, collate_fn=collate_fn_with_params)
     print(f"Loaded {len(dataset)} samples for development")
 
     model.eval()
