@@ -25,14 +25,15 @@ python test_qa_memory.py \
 ```
 
 #### B. Full 160k-Token Retention Curve (Matching Paper Figures 3 & 4: 0k to 160k at 10k intervals)
+
+**Option 1: Using the helper script (Recommended to avoid copy-paste line break issues):**
 ```bash
-python test_qa_memory.py \
-  --model YuWangX/mplus-8b \
-  --datasets squad naturalqa \
-  --num_samples 100 \
-  --nuc 320 \
-  --eval_interval 20 \
-  2>&1 | tee logs/eval_160k_$(date +%Y%m%d_%H%M%S).log
+bash run_eval_160k.sh
+```
+
+**Option 2: As a single unbroken command:**
+```bash
+python test_qa_memory.py --model YuWangX/mplus-8b --datasets squad naturalqa --num_samples 100 --nuc 320 --eval_interval 20 2>&1 | tee logs/eval_160k_$(date +%Y%m%d_%H%M%S).log
 ```
 
 ### Command Parameters
