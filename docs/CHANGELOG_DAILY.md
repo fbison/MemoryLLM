@@ -4,6 +4,31 @@ A high-level, goal-oriented summary of work completed, key discoveries, and prog
 
 ---
 
+## 📅 August 23, 2026 — Smart Checkpoint Resumption, VRAM Telemetry & CUDA Cache Cleanup
+
+### 🎯 Objective
+Resolve multi-hour execution interruptions during 160k Knowledge Retention evaluations by implementing stateful memory checkpointing, smart checkpoint resumption (`--resume`), atomic crash-safe file writes, live VRAM telemetry in `tqdm`, and periodic CUDA cache cleanup.
+
+### 💡 Key Discoveries & Rationale
+* **Interruption Root Cause:** Evaluating 100 samples with 320 distractor chunks takes ~8.8 hours per dataset (~5.3 min/sample). Shared lab server wall-clock limits (3–4h) caused runs to terminate at ~30–40 samples. Without resumption, restarts discarded ~3.5 hours of finished work.
+* **Stateful Neural Memory Checkpointing (`.pt`):** To resume without re-injecting 10,000+ text chunks (which would crash LLM context limits), saving the internal model tensors (`model.memory`, `model.ltm`, `model.ltm_keys`, `model.ltm_recall_frequencies`, `model.ltm_ages`, `model.update_step`, and dropped buffers) takes ~1s (<0.3% overhead) and enables exact bitwise memory restoration in <0.1s.
+* **Atomic File Writes (`.tmp` + `os.replace`):** Writing JSON results and memory checkpoints to temporary files before atomic renaming prevents corrupted, half-written files if a process is killed mid-write.
+* **Fail-Safe Exception Handling:** If an exception occurs during resumption (e.g., missing checkpoint or invalid JSON), all state is automatically reset to empty, cleanly falling back to starting from Sample 0 from scratch.
+
+### 🚀 Deliverables & Actions
+* **Code Enhancements (`test_qa_memory.py`):**
+  * Added `--resume` CLI flag (default: `False`).
+  * Implemented `save_memory_checkpoint` and `load_memory_checkpoint` for atomic STM/LTM tensor persistence.
+  * Implemented `resume_saved_state` to restore completed samples from JSON and reload exact memory states.
+  * Added `torch.cuda.empty_cache()` and live VRAM tracking (`VRAM: alloc/peak`) inside `tqdm`.
+  * Made `save_formatted_json` atomic via `.tmp` file swapping.
+* **Execution Script (`run_eval_160k.sh`):**
+  * Added `--resume` flag to the execution command.
+* **Documentation (`docs/EXECUTION_AND_LAB_GUIDE.md`):**
+  * Documented `--resume` and the checkpoint resumption protocol.
+
+---
+
 ## 📅 August 17, 2026 — Master Test Matrix & 160k Knowledge Retention Evaluation Plan
 
 ### 🎯 Objective
