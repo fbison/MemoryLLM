@@ -184,12 +184,6 @@ def get_parser():
         default=0,
         help="DataLoader worker count (default: 0 to prevent OS open file descriptor exhaustion under large distractor counts)"
     )
-    parser.add_argument(
-        "--resume",
-        default=False,
-        action='store_true',
-        help="Resume evaluation from last completed sample in output JSON and memory checkpoint"
-    )
 
     return parser
 
@@ -199,132 +193,6 @@ def load_data(filepath):
         lines = file.read().splitlines()
     data = [json.loads(line) for line in lines]
     return pd.DataFrame(data)
-
-def save_memory_checkpoint(model, checkpoint_path):
-    temp_path = checkpoint_path + ".tmp"
-    try:
-        state = {
-            'memory': model.memory.data.detach().cpu().clone()
-        }
-        if hasattr(model, 'ltm'):
-            state['ltm'] = [x.clone() if isinstance(x, torch.Tensor) else copy.deepcopy(x) for x in model.ltm]
-        if hasattr(model, 'ltm_keys'):
-            state['ltm_keys'] = [x.clone() if isinstance(x, torch.Tensor) else copy.deepcopy(x) for x in model.ltm_keys]
-        if hasattr(model, 'ltm_recall_frequencies'):
-            state['ltm_recall_frequencies'] = copy.deepcopy(model.ltm_recall_frequencies)
-        if hasattr(model, 'ltm_ages'):
-            state['ltm_ages'] = copy.deepcopy(model.ltm_ages)
-        if hasattr(model, 'update_step'):
-            state['update_step'] = model.update_step
-        if hasattr(model, 'cached_dropped_memories'):
-            state['cached_dropped_memories'] = copy.deepcopy(model.cached_dropped_memories)
-        if hasattr(model, 'cached_dropped_memory_ages'):
-            state['cached_dropped_memory_ages'] = copy.deepcopy(model.cached_dropped_memory_ages)
-        if hasattr(model, 'cached_dropped_keys'):
-            state['cached_dropped_keys'] = copy.deepcopy(model.cached_dropped_keys)
-        
-        torch.save(state, temp_path)
-        if os.path.exists(checkpoint_path):
-            os.remove(checkpoint_path)
-        os.replace(temp_path, checkpoint_path)
-    except Exception as e:
-        print(f"Warning: Failed to save memory checkpoint to {checkpoint_path}: {e}")
-
-def load_memory_checkpoint(model, checkpoint_path):
-    if not os.path.exists(checkpoint_path):
-        return False
-    try:
-        state = torch.load(checkpoint_path, map_location='cpu')
-        model.memory.data = state['memory'].to(model.memory.device)
-        if 'ltm' in state and hasattr(model, 'ltm'):
-            model.ltm = state['ltm']
-        if 'ltm_keys' in state and hasattr(model, 'ltm_keys'):
-            model.ltm_keys = state['ltm_keys']
-        if 'ltm_recall_frequencies' in state and hasattr(model, 'ltm_recall_frequencies'):
-            model.ltm_recall_frequencies = state['ltm_recall_frequencies']
-        if 'ltm_ages' in state and hasattr(model, 'ltm_ages'):
-            model.ltm_ages = state['ltm_ages']
-        if 'update_step' in state and hasattr(model, 'update_step'):
-            model.update_step = state['update_step']
-        if 'cached_dropped_memories' in state and hasattr(model, 'cached_dropped_memories'):
-            model.cached_dropped_memories = state['cached_dropped_memories']
-        if 'cached_dropped_memory_ages' in state and hasattr(model, 'cached_dropped_memory_ages'):
-            model.cached_dropped_memory_ages = state['cached_dropped_memory_ages']
-        if 'cached_dropped_keys' in state and hasattr(model, 'cached_dropped_keys'):
-            model.cached_dropped_keys = state['cached_dropped_keys']
-        return True
-    except Exception as e:
-        print(f"Warning: Failed to load memory checkpoint from {checkpoint_path}: {e}")
-        return False
-
-def safe_batch_decode(tokenizer, items):
-    if len(items) == 0:
-        return []
-    decoded = []
-    for item in items:
-        if isinstance(item, str):
-            decoded.append(item)
-        elif isinstance(item, torch.Tensor):
-            decoded.append(tokenizer.decode(item, skip_special_tokens=False))
-        elif isinstance(item, (np.ndarray, list)):
-            decoded.append(tokenizer.decode(item, skip_special_tokens=False))
-        else:
-            decoded.append(str(item))
-    return decoded
-
-def resume_saved_state(output_filename, checkpoint_filename, model, opt, step):
-    """
-    Modular helper function to restore previous progress from output JSON and memory checkpoint.
-    When --resume is not set, it starts from scratch (start_batch_idx=0).
-    """
-    contexts_middle = {f"step_{idx}": [] for idx in range(step + 1)}
-    middle_outputs = {f"step_{idx}": [] for idx in range(step + 1)}
-    questions = []
-    targets = []
-    start_batch_idx = 0
-
-    if not opt.resume or output_filename is None or not os.path.exists(output_filename):
-        return start_batch_idx, targets, questions, contexts_middle, middle_outputs
-
-    try:
-        cached_data = json.load(open(output_filename, 'r'))
-        completed_samples = {int(k): v for k, v in cached_data.items() if k.isdigit()}
-        num_completed = len(completed_samples)
-
-        if num_completed > 0:
-            checkpoint_loaded = True
-            if not opt.backup_memory and checkpoint_filename and os.path.exists(checkpoint_filename):
-                checkpoint_loaded = load_memory_checkpoint(model, checkpoint_filename)
-
-            if checkpoint_loaded or opt.backup_memory:
-                for idx in range(num_completed):
-                    sample_data = completed_samples[idx]
-                    targets.append(sample_data['target'])
-                    questions.append(sample_data.get('question', None))
-                    contexts_middle['step_0'].append(sample_data.get('context', None))
-                    middle_outputs['step_0'].append(sample_data.get('w/ context', ''))
-
-                    for k, v in sample_data.items():
-                        if k.startswith('prediction_step_'):
-                            step_k = k.replace('prediction_', '')
-                            if step_k in middle_outputs:
-                                middle_outputs[step_k].append(v)
-                        elif k.startswith('contexts_step_'):
-                            step_k = k.replace('contexts_', '')
-                            if step_k in contexts_middle:
-                                contexts_middle[step_k].append(v)
-
-                start_batch_idx = num_completed
-                print(f"✓ Resuming evaluation from sample {start_batch_idx} (restored {start_batch_idx} samples from JSON and memory checkpoint)...")
-    except Exception as e:
-        print(f"Warning: Failed to resume from existing file {output_filename}: {e}. Starting from scratch.")
-        contexts_middle = {f"step_{idx}": [] for idx in range(step + 1)}
-        middle_outputs = {f"step_{idx}": [] for idx in range(step + 1)}
-        questions = []
-        targets = []
-        start_batch_idx = 0
-
-    return start_batch_idx, targets, questions, contexts_middle, middle_outputs
 
 def run_qa(model, tokenizer, dataset, step=1, output_filename=None):
 
@@ -359,11 +227,18 @@ def run_qa(model, tokenizer, dataset, step=1, output_filename=None):
 
     model.eval()
 
-    checkpoint_filename = output_filename.replace('.json', '_memory_checkpoint.pt') if output_filename else None
-    
-    start_batch_idx, targets, questions, contexts_middle, middle_outputs = resume_saved_state(
-        output_filename, checkpoint_filename, model, opt, step
-    )
+    preds_with_context = []
+    contexts_middle = {
+        f"step_{idx}": []
+        for idx in range(step+1)
+    }
+    middle_outputs = {
+        f"step_{idx}": []
+        for idx in range(step+1)
+    }
+    contexts = []
+    questions = []
+    targets = []
 
     if opt.backup_memory:
         backup_memory = model.memory.data.detach().cpu().clone()
@@ -371,10 +246,8 @@ def run_qa(model, tokenizer, dataset, step=1, output_filename=None):
         backup_memory = None
 
     with torch.no_grad():
-        pbar = tqdm(enumerate(dataloader), total=len(dataloader), initial=start_batch_idx)
+        pbar = tqdm(enumerate(dataloader), total=len(dataloader))
         for batch_idx, batch in pbar:
-            if batch_idx < start_batch_idx:
-                continue
             
             batch = [x.cuda() for x in batch]
 
@@ -455,37 +328,35 @@ def run_qa(model, tokenizer, dataset, step=1, output_filename=None):
             targets.append(answer_ids.detach().cpu().numpy()[0])
 
             if output_filename is not None:
-                dec_targets = safe_batch_decode(tokenizer, targets)
+                dec_targets = tokenizer.batch_decode(targets)
                 dec_middle_outputs = {
-                    key: safe_batch_decode(tokenizer, value)
+                    key: tokenizer.batch_decode(value)
                     for key, value in middle_outputs.items()
                 }
-                dec_questions = safe_batch_decode(tokenizer, questions) if len(questions) > 0 else []
+                dec_questions = tokenizer.batch_decode(questions) if len(questions) > 0 else []
                 dec_contexts_middle = {
-                    key: safe_batch_decode(tokenizer, value)
+                    key: tokenizer.batch_decode(value)
                     for key, value in contexts_middle.items()
                 }
                 save_formatted_json(output_filename, opt, dec_targets, dec_middle_outputs, dec_contexts_middle, dec_questions)
-                if not opt.backup_memory and checkpoint_filename:
-                    save_memory_checkpoint(model, checkpoint_filename)
 
             torch.cuda.empty_cache()
             vram_alloc = torch.cuda.memory_allocated() / (1024 ** 3)
             vram_peak = torch.cuda.max_memory_allocated() / (1024 ** 3)
             pbar.set_postfix_str(f"VRAM: {vram_alloc:.2f}G/{vram_peak:.2f}G")
 
-    targets = safe_batch_decode(tokenizer, targets)
+    targets = tokenizer.batch_decode(targets)
     middle_outputs = {
-        key: safe_batch_decode(tokenizer, value)
-        for key, value in middle_outputs.items()
+        key: tokenizer.batch_decode(value)
+        for key,value in middle_outputs.items()
     }
 
     if len(questions) > 0:
-        questions = safe_batch_decode(tokenizer, questions)
+        questions = tokenizer.batch_decode(questions)
     
     contexts_middle = {
-        key: safe_batch_decode(tokenizer, value)
-        for key, value in contexts_middle.items()
+        key: tokenizer.batch_decode(value)
+        for key,value in contexts_middle.items()
     }
 
     return middle_outputs, targets, contexts_middle, questions
@@ -699,9 +570,6 @@ if __name__ == "__main__":
                     if cached_data.get('param', {}).get('test_samples', 0) >= opt.num_samples:
                         generated_results = cached_data
                         is_cached = True
-                        print(f"✓ Dataset {dataset} already has complete results ({opt.num_samples} samples) in {filename}. Skipping evaluation.")
-                    elif opt.resume:
-                        print(f"Found partial results in {filename} ({cached_data.get('param', {}).get('test_samples', 0)}/{opt.num_samples} samples). Resuming evaluation...")
                     else:
                         print(f"Cached file {filename} has {cached_data.get('param', {}).get('test_samples', 0)} samples, which is fewer than requested {opt.num_samples}. Re-running evaluation...")
                 except Exception:

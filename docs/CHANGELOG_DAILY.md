@@ -4,28 +4,22 @@ A high-level, goal-oriented summary of work completed, key discoveries, and prog
 
 ---
 
-## 📅 August 23, 2026 — Smart Checkpoint Resumption, VRAM Telemetry & CUDA Cache Cleanup
+## 📅 August 23, 2026 — Checkpoint Disk Quota Analysis, CUDA Cache Cleanup & VRAM Telemetry
 
 ### 🎯 Objective
-Resolve multi-hour execution interruptions during 160k Knowledge Retention evaluations by implementing stateful memory checkpointing, smart checkpoint resumption (`--resume`), atomic crash-safe file writes, live VRAM telemetry in `tqdm`, and periodic CUDA cache cleanup.
+Investigate multi-hour 160k Knowledge Retention interruptions, analyze the feasibility and disk constraints of model checkpointing for resumption, and implement CUDA cache cleanup and live VRAM telemetry.
 
-### 💡 Key Discoveries & Rationale
-* **Interruption Root Cause:** Evaluating 100 samples with 320 distractor chunks takes ~8.8 hours per dataset (~5.3 min/sample). Shared lab server wall-clock limits (3–4h) caused runs to terminate at ~30–40 samples. Without resumption, restarts discarded ~3.5 hours of finished work.
-* **Stateful Neural Memory Checkpointing (`.pt`):** To resume without re-injecting 10,000+ text chunks (which would crash LLM context limits), saving the internal model tensors (`model.memory`, `model.ltm`, `model.ltm_keys`, `model.ltm_recall_frequencies`, `model.ltm_ages`, `model.update_step`, and dropped buffers) takes ~1s (<0.3% overhead) and enables exact bitwise memory restoration in <0.1s.
-* **Atomic File Writes (`.tmp` + `os.replace`):** Writing JSON results and memory checkpoints to temporary files before atomic renaming prevents corrupted, half-written files if a process is killed mid-write.
-* **Fail-Safe Exception Handling:** If an exception occurs during resumption (e.g., missing checkpoint or invalid JSON), all state is automatically reset to empty, cleanly falling back to starting from Sample 0 from scratch.
+### 💡 Key Discoveries & Decision Context
+* **Checkpoint Disk Quota Conflict:** We attempted to save full neural memory checkpoints (`.pt`) for exact stateful resumption. However, across all 32 transformer layers of MPlus-8B (`model.memory.data`, `model.ltm`, `model.ltm_keys`, and dropped memory buffers), the state requires **~10.5 GB per checkpoint**, which instantly triggered `OSError: [Errno 28] No space left on device` on the lab server user quota.
+* **Streamlined Scope:** To ensure stable, uninterrupted execution without risking disk quota exhaustion, we removed binary checkpoint saving and the `--resume` option.
+* **Memory & Telemetry Enhancements:** Added `torch.cuda.empty_cache()` at the end of each sample to prevent PyTorch CUDA memory fragmentation during long runs, and added live VRAM telemetry (`VRAM: alloc/peak`) inside `tqdm`.
 
 ### 🚀 Deliverables & Actions
-* **Code Enhancements (`test_qa_memory.py`):**
-  * Added `--resume` CLI flag (default: `False`).
-  * Implemented `save_memory_checkpoint` and `load_memory_checkpoint` for atomic STM/LTM tensor persistence.
-  * Implemented `resume_saved_state` to restore completed samples from JSON and reload exact memory states.
-  * Added `torch.cuda.empty_cache()` and live VRAM tracking (`VRAM: alloc/peak`) inside `tqdm`.
-  * Made `save_formatted_json` atomic via `.tmp` file swapping.
-* **Execution Script (`run_eval_160k.sh`):**
-  * Added `--resume` flag to the execution command.
-* **Documentation (`docs/EXECUTION_AND_LAB_GUIDE.md`):**
-  * Documented `--resume` and the checkpoint resumption protocol.
+* **Code Refinements (`test_qa_memory.py`):**
+  * Added `torch.cuda.empty_cache()` after each evaluated sample.
+  * Added live GPU VRAM tracking directly to the `tqdm` progress bar (`pbar.set_postfix_str`).
+  * Ensured `save_formatted_json` uses atomic writes (`.tmp` + `os.replace`) to prevent corrupted JSON files.
+* **Execution Script (`run_eval_160k.sh`):** Kept the standard clean execution command without `--resume`.
 
 ---
 

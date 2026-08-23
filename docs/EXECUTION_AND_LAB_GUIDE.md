@@ -42,7 +42,6 @@ python test_qa_memory.py --model YuWangX/mplus-8b --datasets squad naturalqa --n
 * `--num_samples`: Number of test evaluation samples (default: `100` to match paper benchmark).
 * `--nuc`: Number of Unrelated Contexts / distractor context chunks inserted into long-term memory (`nuc=320` $\approx$ 160,000 tokens).
 * `--eval_interval`: Evaluation interval for text generation (e.g. `20` = evaluate every 20 chunks $\approx$ 10k tokens).
-* `--resume`: Resume evaluation from last saved sample in output JSON and memory checkpoint (`.pt`).
 * `--related_position`: Position of the target context in the memory sequence (`begin`, `end`, or `random`; default: `begin`).
 
 ---
