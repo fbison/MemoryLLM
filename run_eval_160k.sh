@@ -12,7 +12,7 @@ echo "========================================================================"
 
 python test_qa_memory.py \
   --model YuWangX/mplus-8b \
-  --datasets squad naturalqa \
+  --datasets naturalqa \
   --num_samples 100 \
   --nuc 320 \
   --eval_interval 20 \

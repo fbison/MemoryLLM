@@ -92,9 +92,13 @@ Evaluating 100 samples with 10 distractor steps per sample can take considerable
 
 > **Note on `flash-attn`:** If `flash-attn` is not installed on the GPU host, the model automatically falls back to PyTorch native Scaled Dot-Product Attention (SDPA) or Eager attention.
 
+## 4. Nvidia
+
+ nvidia-smi -> Verify logs
+ 
 ---
 
-## 4. Solved Issues & Bugfix Registry
+## 5. Solved Issues & Bugfix Registry
 
 ### Issue 1: PyTorch / Transformers Version Mismatch
 * **Symptom:** `[transformers] Disabling PyTorch because PyTorch >= 2.4 is required but found 2.2.2` followed by `NameError: name 'nn' is not defined`.
